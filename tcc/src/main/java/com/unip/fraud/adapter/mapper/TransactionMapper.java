@@ -7,16 +7,15 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import static java.util.Objects.isNull;
 
 @Mapper(config = MapperConfiguration.class)
 public interface TransactionMapper {
 
   @Mapping(target = "transactionId", expression = "java(generateTransactionId())")
-  @Mapping(target = "realFraud", expression = "java(toBoolean(row.values().get(\"class\")))")
+  @Mapping(target = "realFraud", expression = "java(toBoolean(row.values().get(\"fraudfound_p\")))")
   @Mapping(target = "features", expression = "java(buildFeatures(row.values()))")
   Transaction toTransaction(final ParsedCsvRow row);
 
@@ -27,18 +26,39 @@ public interface TransactionMapper {
 
   @Named("toBoolean")
   default Boolean toBoolean(String value) {
-    if (isNull(value)) {
+    if (value == null || value.isBlank()) {
       return false;
     }
+
     return value.equals("1")
         || value.equalsIgnoreCase("true")
         || value.equalsIgnoreCase("yes")
+        || value.equalsIgnoreCase("sim")
         || value.equalsIgnoreCase("fraud");
   }
 
   @Named("buildFeatures")
-  default Map<String, Double> buildFeatures(final Map<String, String> row) {
-    return Map.of("Time", Double.valueOf(row.getOrDefault("time", "0")),
-        "Amount", Double.valueOf(row.getOrDefault("amount", "0")));
+  default Map<String, Object> buildFeatures(Map<String, String> row) {
+    Map<String, Object> features = new LinkedHashMap<>();
+
+    features.put("Month", row.get("month"));
+    features.put("WeekOfMonth", parseInteger(row.get("weekofmonth")));
+    features.put("DayOfWeek", row.get("dayofweek"));
+    features.put("Make", row.get("make"));
+    features.put("AccidentArea", row.get("accidentarea"));
+    features.put("Sex", row.get("sex"));
+    features.put("Age", parseInteger(row.get("age")));
+    features.put("Fault", row.get("fault"));
+    features.put("VehiclePrice", row.get("vehicleprice"));
+
+    return features;
+  }
+
+  default Integer parseInteger(String value) {
+    if (value == null || value.isBlank()) {
+      return 0;
+    }
+
+    return Integer.parseInt(value);
   }
 }

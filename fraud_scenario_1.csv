@@ -1,0 +1,13 @@
+Month,WeekOfMonth,DayOfWeek,Make,AccidentArea,Sex,Age,Fault,VehiclePrice,FraudFound_P
+Jan,1,Monday,Honda,Urban,Male,35,Policy Holder,more than 69000,1
+Feb,2,Tuesday,Toyota,Rural,Female,28,Third Party,20000 to 29000,0
+Mar,3,Wednesday,Ford,Urban,Male,45,Policy Holder,30000 to 39000,1
+Apr,4,Thursday,BMW,Urban,Female,22,Third Party,less than 20000,0
+May,1,Friday,Audi,Rural,Male,55,Policy Holder,more than 69000,1
+Jun,2,Saturday,Chevrolet,Urban,Female,31,Third Party,20000 to 29000,0
+Jul,3,Sunday,Ferrari,Urban,Male,19,Policy Holder,more than 69000,1
+Aug,4,Monday,Hyundai,Rural,Female,40,Third Party,30000 to 39000,0
+Sep,1,Tuesday,Nissan,Urban,Male,60,Policy Holder,more than 69000,1
+Oct,2,Wednesday,Kia,Rural,Female,26,Third Party,less than 20000,0
+Nov,3,Thursday,Volkswagen,Urban,Male,50,Policy Holder,30000 to 39000,1
+Dec,4,Friday,Mercedes,Urban,Female,33,Third Party,more than 69000,0

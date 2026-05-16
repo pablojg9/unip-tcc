@@ -12,6 +12,15 @@ spring:
     show-sql: true
   kafka:
     bootstrap-servers: localhost:9092
+    consumer:
+      group-id: fraud-api
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 dataset:
   folder-path: ${DATASET_PATH:/Users/pablo/Documents/java-projects/unip-tcc}

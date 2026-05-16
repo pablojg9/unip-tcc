@@ -28,9 +28,9 @@ public class TransactionKafkaProducer implements TransactionProducerInPort {
       event.put("realFraud", transaction.realFraud());
       event.put("features", transaction.features());
 
-      final String json = objectMapper.writeValueAsString(event);
+      String json = objectMapper.writeValueAsString(event);
       kafkaTemplate.send("transactions", transaction.transactionId(), json);
-
+      System.out.println("Transaction sent to Kafka: " + json);
     } catch (Exception exception) {
       throw new RuntimeException(
           "Error sending transaction to Kafka",

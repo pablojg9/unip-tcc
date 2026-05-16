@@ -5,6 +5,6 @@ import java.util.Map;
 public record Transaction(
     String transactionId,
     Boolean realFraud,
-    Map<String, Double> features
+    Map<String, Object> features
 ) {
 }

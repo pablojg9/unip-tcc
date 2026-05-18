@@ -1,0 +1,83 @@
+<main class="page">
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Fraud Detection MVP</p>
+      <h1>Fraud Detection Dashboard</h1>
+      <p>Monitoramento do pipeline Bronze, Silver e Gold</p>
+    </div>
+
+    <div class="actions">
+      <span class="status">{{ status }}</span>
+      <button type="button" (click)="refresh()">Atualizar</button>
+    </div>
+  </section>
+
+  <section *ngIf="summary as data" class="content">
+    <div class="cards">
+      <article class="card bronze">
+        <span>Bronze</span>
+        <strong>{{ data.totalBronze }}</strong>
+        <small>Dados brutos</small>
+      </article>
+
+      <article class="card silver">
+        <span>Silver</span>
+        <strong>{{ data.totalSilver }}</strong>
+        <small>Dados tratados</small>
+      </article>
+
+      <article class="card gold">
+        <span>Gold</span>
+        <strong>{{ data.totalGold }}</strong>
+        <small>Resultados IA</small>
+      </article>
+
+      <article class="card rejected">
+        <span>Rejected</span>
+        <strong>{{ data.totalRejected }}</strong>
+        <small>Registros rejeitados</small>
+      </article>
+    </div>
+
+    <div class="panels">
+      <article class="panel wide">
+        <div class="panel-header">
+          <div>
+            <span>Predição</span>
+            <h2>Fraudes previstas pela IA</h2>
+          </div>
+          <strong>{{ data.predictedFraudsByAi }}</strong>
+        </div>
+
+        <div class="progress">
+          <div class="progress-fill" [style.width]="fraudBarWidth"></div>
+        </div>
+
+        <p>{{ data.predictedFraudPercentage | number:'1.2-2' }}% de fraude prevista</p>
+      </article>
+
+      <article class="panel">
+        <span>Dataset</span>
+        <h2>Fraudes reais</h2>
+        <strong>{{ data.realFraudsFromDataset }}</strong>
+        <p>Fraudes marcadas no CSV original.</p>
+      </article>
+    </div>
+
+    <section class="pipeline">
+      <div class="step done">Bronze<br><small>CSV bruto</small></div>
+      <div class="line"></div>
+      <div class="step done">Silver<br><small>Normalizado</small></div>
+      <div class="line"></div>
+      <div class="step done">Kafka<br><small>transactions</small></div>
+      <div class="line"></div>
+      <div class="step done">Python IA<br><small>prediction</small></div>
+      <div class="line"></div>
+      <div class="step" [class.done]="data.totalGold > 0">Gold<br><small>dashboard</small></div>
+    </section>
+
+    <footer>
+      Última atualização: {{ lastUpdated | date:'dd/MM/yyyy HH:mm:ss' }}
+    </footer>
+  </section>
+</main>

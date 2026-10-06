@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import logging
 import time
-from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -53,20 +52,21 @@ class KafkaModelManagementWorker:
         random_state=self._settings.random_state,
         test_size=self._settings.test_size,
         anomaly_contamination=self._settings.anomaly_contamination,
+        decision_threshold=self._settings.decision_threshold,
+        ignored_features=self._settings.ignored_features,
       ))
-      result = asdict(report)
-      result.update({
+      result = {
         "trainingId": training_id,
         "status": "READY",
         "modelType": report.model_type.value,
         "modelVersion": report.model_version,
         "artifactPath": report.artifact_path,
         "datasetSha256": report.dataset_sha256,
-      })
-      result.pop("model_type", None)
-      result.pop("model_version", None)
-      result.pop("artifact_path", None)
-      result.pop("dataset_sha256", None)
+        "rows": report.rows,
+        "featureCount": report.feature_count,
+        "targetColumn": report.target_column,
+        "metrics": report.metrics,
+      }
     except Exception as exception:
       logger.exception("Training %s failed", training_id)
       result = {

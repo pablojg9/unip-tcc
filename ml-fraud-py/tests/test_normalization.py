@@ -8,6 +8,7 @@ from fraud_detection.normalization import (
   normalize_name,
   parse_binary_target,
 )
+from fraud_detection.quality import clean_training_frame, drop_ignored_features
 
 
 class NormalizationTest(unittest.TestCase):
@@ -32,6 +33,29 @@ class NormalizationTest(unittest.TestCase):
   def test_rejects_non_binary_target(self) -> None:
     with self.assertRaisesRegex(ValueError, "Invalid numeric fraud label"):
       parse_binary_target(pd.Series([0, 1, 2]))
+
+  def test_applies_conservative_quality_rules(self) -> None:
+    frame = pd.DataFrame({
+      "age": [0, 35, 35],
+      "month_claimed": ["0", "Jan", "Jan"],
+      "amount": [100, 200, 200],
+    })
+
+    cleaned, duplicates, invalid = clean_training_frame(frame)
+
+    self.assertEqual(1, duplicates)
+    self.assertEqual(2, invalid)
+    self.assertTrue(pd.isna(cleaned.loc[0, "age"]))
+    self.assertTrue(pd.isna(cleaned.loc[0, "month_claimed"]))
+
+  def test_drops_known_identifiers(self) -> None:
+    frame = pd.DataFrame({"PolicyNumber": [1], "amount": [100]})
+    frame = normalize_frame_columns(frame)
+
+    cleaned, ignored = drop_ignored_features(frame)
+
+    self.assertEqual(("policynumber",), ignored)
+    self.assertEqual(["amount"], list(cleaned.columns))
 
 
 if __name__ == "__main__":

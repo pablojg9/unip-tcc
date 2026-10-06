@@ -51,8 +51,21 @@ python -m fraud_detection train --dataset ../fraud_scenario_1.csv
 python -m fraud_detection consume
 python -m fraud_detection serve
 python -m fraud_detection inspect --dataset ../fraud_scenario_1.csv
+python -m fraud_detection evaluate --dataset ../sinistros.xlsx --output-directory results
 python -m unittest discover -s tests -v
 ```
+
+The offline `evaluate` command requires a labeled dataset and compares Logistic
+Regression, Decision Tree and Random Forest with no balancing, class weights and
+SMOTE. It evaluates raw and treated data with stratified cross-validation and a
+holdout, then writes `metrics.csv`, `thresholds.csv`, `feature_importance.csv`,
+confusion/ROC/precision-recall plots and a JSON summary. This experiment does not
+replace or activate the production model.
+
+Before training, exact duplicate rows are removed, invalid age/calendar zero
+markers are converted to missing values, and identifier columns are excluded.
+The ignored column list is configurable and is applied to both production
+training and offline evaluation.
 
 The compatibility scripts remain available:
 
@@ -70,6 +83,8 @@ python consult-column.py --dataset ../fraud_scenario_1.csv
 | `FRAUD_TARGET_ALIASES` | `fraudfound_p,fraud,is_fraud,fraude,isfraud,label` |
 | `FRAUD_RANDOM_STATE` | `42` |
 | `FRAUD_TEST_SIZE` | `0.25` |
+| `FRAUD_DECISION_THRESHOLD` | `0.5` |
+| `FRAUD_IGNORED_FEATURES` | Known claim, policy, insured and representative IDs |
 | `FRAUD_ANOMALY_CONTAMINATION` | `0.05` |
 | `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` |
 | `KAFKA_TRANSACTIONS_TOPIC` | `transactions` |

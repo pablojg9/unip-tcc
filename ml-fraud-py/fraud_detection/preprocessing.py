@@ -11,6 +11,7 @@ def build_preprocessor(
     categorical_columns: tuple[str, ...],
     *,
     scale_numeric: bool,
+    sparse_output: bool = True,
 ) -> ColumnTransformer:
   transformers: list[tuple[str, Pipeline, list[str]]] = []
   if numeric_columns:
@@ -27,7 +28,7 @@ def build_preprocessor(
             ("imputer", SimpleImputer(strategy="most_frequent")),
             (
               "one_hot",
-              OneHotEncoder(handle_unknown="ignore", sparse_output=True),
+              OneHotEncoder(handle_unknown="ignore", sparse_output=sparse_output),
             ),
           ]
         ),

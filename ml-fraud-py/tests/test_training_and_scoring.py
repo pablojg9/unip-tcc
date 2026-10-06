@@ -105,6 +105,33 @@ class TrainingAndScoringTest(unittest.TestCase):
     with self.assertRaisesRegex(ValueError, "features must contain"):
       scorer.score(ScoringRequest(transaction_id="claim-3", features={}))
 
+  def test_removes_identifiers_applies_quality_rules_and_uses_threshold(self) -> None:
+    dataset = self.root / "quality.csv"
+    frame = self._training_frame(include_target=True)
+    frame["PolicyNumber"] = range(1000, 1000 + len(frame))
+    frame["RepNumber"] = range(2000, 2000 + len(frame))
+    frame.loc[0, "Customer Age"] = 0
+    frame = pd.concat([frame, frame.iloc[[1]]], ignore_index=True)
+    frame.to_csv(dataset, index=False)
+    artifact = self.root / "quality.joblib"
+
+    report = self.training.train(TrainingRequest(
+      dataset_path=str(dataset),
+      artifact_path=str(artifact),
+      target_aliases=DEFAULT_TARGET_ALIASES,
+      decision_threshold=0.35,
+    ))
+    bundle = self.repository.load(artifact)
+
+    self.assertEqual(25, report.original_rows)
+    self.assertEqual(1, report.duplicates_removed)
+    self.assertEqual(1, report.invalid_values_replaced)
+    self.assertEqual(("policynumber", "repnumber"), report.ignored_columns)
+    self.assertNotIn("policynumber", bundle.feature_columns)
+    self.assertNotIn("repnumber", bundle.feature_columns)
+    self.assertEqual(0.35, bundle.threshold)
+    self.assertIn("pr_auc", bundle.metrics)
+
   def _request(self, dataset: Path, artifact: Path) -> TrainingRequest:
     return TrainingRequest(
       dataset_path=str(dataset),

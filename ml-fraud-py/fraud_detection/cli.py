@@ -35,6 +35,8 @@ def main(arguments: Sequence[str] | None = None) -> int:
     return _serve(settings)
   if args.command == "inspect":
     return _inspect(args)
+  if args.command == "evaluate":
+    return _evaluate(args, settings)
   parser.error("A command is required")
   return 2
 
@@ -49,6 +51,8 @@ def _train(args: argparse.Namespace, settings: Settings) -> int:
       random_state=settings.random_state,
       test_size=settings.test_size,
       anomaly_contamination=settings.anomaly_contamination,
+      decision_threshold=settings.decision_threshold,
+      ignored_features=settings.ignored_features,
     )
   )
   print(json.dumps(asdict(report), indent=2, ensure_ascii=False))
@@ -78,6 +82,23 @@ def _inspect(args: argparse.Namespace) -> int:
   return 0
 
 
+def _evaluate(args: argparse.Namespace, settings: Settings) -> int:
+  from fraud_detection.experiments import EvaluationConfig, run_evaluation
+
+  summary = run_evaluation(EvaluationConfig(
+    dataset_path=Path(args.dataset),
+    output_directory=Path(args.output_directory),
+    target_aliases=settings.target_aliases,
+    ignored_features=settings.ignored_features,
+    random_state=settings.random_state,
+    test_size=settings.test_size,
+    folds=args.folds,
+    threshold=settings.decision_threshold,
+  ))
+  print(json.dumps(summary, indent=2, ensure_ascii=False))
+  return 0
+
+
 def _parser() -> argparse.ArgumentParser:
   parser = argparse.ArgumentParser(description="Fraud model training and Kafka scoring")
   parser.add_argument("--log-level", default="INFO")
@@ -89,6 +110,12 @@ def _parser() -> argparse.ArgumentParser:
   commands.add_parser("serve", help="Run scoring, training and model activation workers")
   inspect = commands.add_parser("inspect", help="Inspect normalized dataset columns")
   inspect.add_argument("--dataset", required=True)
+  evaluate = commands.add_parser(
+    "evaluate", help="Compare models, balancing and data treatment offline"
+  )
+  evaluate.add_argument("--dataset", required=True)
+  evaluate.add_argument("--output-directory", default="results")
+  evaluate.add_argument("--folds", type=int, default=5)
   return parser
 
 

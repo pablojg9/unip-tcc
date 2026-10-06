@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from fraud_detection.quality import DEFAULT_IGNORED_FEATURES
+
 DEFAULT_TARGET_ALIASES = (
   "fraudfound_p",
   "fraud",
@@ -27,6 +29,8 @@ class Settings:
   anomaly_contamination: float
   kafka_retry_seconds: float
   message_max_retries: int
+  decision_threshold: float = 0.5
+  ignored_features: tuple[str, ...] = DEFAULT_IGNORED_FEATURES
   training_requests_topic: str = "model-training-requests"
   training_results_topic: str = "model-training-results"
   activation_requests_topic: str = "model-activation-requests"
@@ -61,6 +65,12 @@ class Settings:
         "KAFKA_RETRY_SECONDS", 5.0, minimum=0.1, maximum=300.0
       ),
       message_max_retries=_integer("KAFKA_MESSAGE_MAX_RETRIES", 3, minimum=1),
+      decision_threshold=_bounded_float(
+        "FRAUD_DECISION_THRESHOLD", 0.5, minimum=0.01, maximum=0.99
+      ),
+      ignored_features=_list(
+        "FRAUD_IGNORED_FEATURES", DEFAULT_IGNORED_FEATURES
+      ),
       training_requests_topic=os.getenv(
         "KAFKA_TRAINING_REQUESTS_TOPIC", "model-training-requests"
       ),
@@ -94,3 +104,11 @@ def _bounded_float(name: str, default: float, minimum: float, maximum: float) ->
   if not minimum <= value <= maximum:
     raise ValueError(f"{name} must be between {minimum} and {maximum}")
   return value
+
+
+def _list(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
+  return tuple(
+    value.strip()
+    for value in os.getenv(name, ",".join(default)).split(",")
+    if value.strip()
+  )

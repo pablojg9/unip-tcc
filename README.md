@@ -49,8 +49,31 @@ modelo ativo:
 
 ```bash
 cd ml-fraud-py
+python -m fraud_detection split --dataset ../sinistros.xlsx --output-directory split-data
 python -m fraud_detection evaluate --dataset ../sinistros.xlsx --output-directory results
 ```
 
-Os resultados incluem métricas, matrizes de confusão, curvas ROC e
-precisão-recall, comparação de limiares e importância das variáveis.
+O comando `split` cria `train.csv` e `test.csv` estratificados. Use
+`--target-column "Nome da coluna"` quando a coluna de fraude tiver um nome não
+reconhecido e repita `--ignore-column` para identificadores específicos da base.
+
+A avaliação escolhe a configuração somente por validação cruzada no treino e
+usa o teste intocado uma única vez. Os resultados incluem métricas, matrizes de
+confusão, curvas ROC e precisão-recall, comparação de limiares e importância das
+variáveis.
+
+## Explicações generativas locais
+
+Cada resultado possui evidências locais calculadas especificamente para o
+sinistro. Opcionalmente, um modelo Ollama transforma essas evidências em uma
+explicação curta em português, sem receber os campos brutos da planilha e sem
+alterar o score do modelo de fraude.
+
+```bash
+docker compose --profile generative-ai up -d ollama
+docker compose --profile generative-ai exec ollama ollama pull llama3.2:1b
+GENERATIVE_EXPLANATION_ENABLED=true docker compose --profile generative-ai up --build
+```
+
+Se o modelo local estiver desligado ou indisponível, o sistema grava uma
+explicação determinística e continua processando normalmente.

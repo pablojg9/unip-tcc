@@ -13,6 +13,9 @@ public record FraudScoringMessage(
     Double threshold,
     String classification,
     String modelVersion,
-    List<String> reasons
+    List<String> reasons,
+    String explanation,
+    String explanationType,
+    String explanationModel
 ) {
 }

@@ -72,6 +72,21 @@ The confirmed fraud column is optional. Its accepted aliases are configured by
 Columns not recognized as the target are preserved as features. Adding a new
 column does not require a Java code or database schema change.
 
+## Scoring and generative explanation flow
+
+```text
+Silver/outbox -> Kafka -> Python model -> score and risk
+                                      -> local per-claim evidence
+                                      -> optional local Ollama explanation
+                                      -> deterministic fallback when unavailable
+                                      -> Kafka -> Gold -> transaction detail
+```
+
+The generative model never changes the fraud probability, threshold or
+classification. It receives only the score metadata and local evidence
+sentences, not the raw claim fields. Gold stores the generated text, its type
+(`GENERATIVE`, `DETERMINISTIC` or `FALLBACK`) and the model name for audit.
+
 ## Medallion responsibilities
 
 | Schema | Responsibility |
@@ -128,6 +143,10 @@ Relevant environment variables:
 - `IMPORT_MAX_FILE_SIZE`
 - `IMPORT_TARGET_ALIASES`
 - `OUTBOX_PUBLISH_DELAY_MS`
+- `GENERATIVE_EXPLANATION_ENABLED`
+- `GENERATIVE_EXPLANATION_URL`
+- `GENERATIVE_EXPLANATION_MODEL`
+- `GENERATIVE_EXPLANATION_TIMEOUT_SECONDS`
 
 Run validation with:
 

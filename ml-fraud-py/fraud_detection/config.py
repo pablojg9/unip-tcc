@@ -31,6 +31,10 @@ class Settings:
   message_max_retries: int
   decision_threshold: float = 0.5
   ignored_features: tuple[str, ...] = DEFAULT_IGNORED_FEATURES
+  generative_explanation_enabled: bool = False
+  generative_explanation_url: str = "http://ollama:11434/api/generate"
+  generative_explanation_model: str = "llama3.2:1b"
+  generative_explanation_timeout_seconds: float = 8.0
   training_requests_topic: str = "model-training-requests"
   training_results_topic: str = "model-training-results"
   activation_requests_topic: str = "model-activation-requests"
@@ -70,6 +74,18 @@ class Settings:
       ),
       ignored_features=_list(
         "FRAUD_IGNORED_FEATURES", DEFAULT_IGNORED_FEATURES
+      ),
+      generative_explanation_enabled=_boolean(
+        "GENERATIVE_EXPLANATION_ENABLED", False
+      ),
+      generative_explanation_url=os.getenv(
+        "GENERATIVE_EXPLANATION_URL", "http://ollama:11434/api/generate"
+      ),
+      generative_explanation_model=os.getenv(
+        "GENERATIVE_EXPLANATION_MODEL", "llama3.2:1b"
+      ),
+      generative_explanation_timeout_seconds=_bounded_float(
+        "GENERATIVE_EXPLANATION_TIMEOUT_SECONDS", 8.0, minimum=0.1, maximum=60.0
       ),
       training_requests_topic=os.getenv(
         "KAFKA_TRAINING_REQUESTS_TOPIC", "model-training-requests"
@@ -112,3 +128,12 @@ def _list(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
     for value in os.getenv(name, ",".join(default)).split(",")
     if value.strip()
   )
+
+
+def _boolean(name: str, default: bool) -> bool:
+  value = os.getenv(name, str(default)).strip().lower()
+  if value in {"1", "true", "yes", "sim"}:
+    return True
+  if value in {"0", "false", "no", "nao", "não"}:
+    return False
+  raise ValueError(f"{name} must be a boolean")

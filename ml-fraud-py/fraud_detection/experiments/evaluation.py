@@ -36,7 +36,12 @@ from sklearn.metrics import (
   roc_auc_score,
   roc_curve,
 )
-from sklearn.model_selection import StratifiedKFold, cross_validate, train_test_split
+from sklearn.model_selection import (
+  StratifiedKFold,
+  cross_val_predict,
+  cross_validate,
+  train_test_split,
+)
 from sklearn.pipeline import Pipeline
 from sklearn.tree import DecisionTreeClassifier
 
@@ -44,7 +49,6 @@ from fraud_detection.config import DEFAULT_TARGET_ALIASES
 from fraud_detection.infrastructure.dataset import PandasDatasetReader
 from fraud_detection.normalization import (
   coerce_feature_types,
-  find_target_column,
   normalize_frame_columns,
   parse_binary_target,
 )
@@ -54,18 +58,20 @@ from fraud_detection.quality import (
   clean_training_frame,
   drop_ignored_features,
 )
+from fraud_detection.experiments.splitting import resolve_target_column
 
 
 @dataclass(frozen=True, slots=True)
 class EvaluationConfig:
   dataset_path: Path
   output_directory: Path
+  target_column: str | None = None
   target_aliases: tuple[str, ...] = DEFAULT_TARGET_ALIASES
   ignored_features: tuple[str, ...] = DEFAULT_IGNORED_FEATURES
   random_state: int = 42
   test_size: float = 0.25
   folds: int = 5
-  threshold: float = 0.5
+  threshold: float | None = None
 
 
 @dataclass(slots=True)
@@ -73,8 +79,15 @@ class _BestRun:
   score: float = -1.0
   name: str = ""
   estimator: Any = None
+  treatment: str = ""
+  model: str = ""
+  balancing: str = ""
+  train_x: pd.DataFrame | None = None
+  train_y: pd.Series | None = None
   test_x: pd.DataFrame | None = None
   test_y: pd.Series | None = None
+  folds: int = 0
+  row: dict[str, Any] | None = None
 
 
 def run_evaluation(config: EvaluationConfig) -> dict[str, Any]:
@@ -88,9 +101,9 @@ def run_evaluation(config: EvaluationConfig) -> dict[str, Any]:
   )
   if source.empty:
     raise ValueError("Dataset is empty")
-  target_column = find_target_column(list(source.columns), config.target_aliases)
-  if target_column is None:
-    raise ValueError("Offline evaluation requires a fraud target column")
+  target_column = resolve_target_column(
+    list(source.columns), config.target_column, config.target_aliases
+  )
 
   treated, duplicates_removed, invalid_values_replaced = clean_training_frame(source)
   variants = {"raw": source.copy(), "treated": treated}
@@ -111,7 +124,7 @@ def run_evaluation(config: EvaluationConfig) -> dict[str, Any]:
       random_state=config.random_state,
       stratify=target,
     )
-    folds = _safe_fold_count(target, config.folds)
+    folds = _safe_fold_count(train_y, config.folds)
     cross_validation = StratifiedKFold(
       n_splits=folds,
       shuffle=True,
@@ -121,8 +134,8 @@ def run_evaluation(config: EvaluationConfig) -> dict[str, Any]:
     for model_name in ("logistic_regression", "decision_tree", "random_forest"):
       for balancing in ("none", "class_weight", "smote"):
         estimator = _build_estimator(
-          features,
-          target,
+          train_x,
+          train_y,
           model_name,
           balancing,
           config.random_state,
@@ -138,17 +151,13 @@ def run_evaluation(config: EvaluationConfig) -> dict[str, Any]:
         }
         cross_validation_result = cross_validate(
           estimator,
-          features,
-          target,
+          train_x,
+          train_y,
           scoring=scoring,
           cv=cross_validation,
           n_jobs=1,
           error_score="raise",
         )
-        fitted = clone(estimator).fit(train_x, train_y)
-        probabilities = fitted.predict_proba(test_x)[:, 1]
-        predicted = probabilities >= config.threshold
-        metrics = _metrics(test_y, predicted, probabilities)
         run_name = f"{treatment}-{model_name}-{balancing}"
         row: dict[str, Any] = {
           "treatment": treatment,
@@ -157,39 +166,102 @@ def run_evaluation(config: EvaluationConfig) -> dict[str, Any]:
           "rows": len(features),
           "features": len(features.columns),
           "folds": folds,
-          "threshold": config.threshold,
-          **metrics,
+          "selected": False,
         }
         for metric_name in scoring:
           values = cross_validation_result[f"test_{metric_name}"]
           row[f"cv_{metric_name}_mean"] = float(values.mean())
           row[f"cv_{metric_name}_std"] = float(values.std())
         rows.append(row)
-        _save_diagnostic_plot(
-          test_y,
-          predicted,
-          probabilities,
-          plots / f"{run_name}.png",
-          run_name,
-        )
-        threshold_rows.extend(
-          _threshold_table(test_y, probabilities, run_name)
-        )
-        if metrics["pr_auc"] > best.score:
+        selection_score = row["cv_pr_auc_mean"]
+        if selection_score > best.score:
           best = _BestRun(
-            score=metrics["pr_auc"],
+            score=selection_score,
             name=run_name,
-            estimator=fitted,
+            estimator=estimator,
+            treatment=treatment,
+            model=model_name,
+            balancing=balancing,
+            train_x=train_x,
+            train_y=train_y,
             test_x=test_x,
             test_y=test_y,
+            folds=folds,
+            row=row,
           )
 
+  if (
+      best.estimator is None
+      or best.train_x is None
+      or best.train_y is None
+      or best.test_x is None
+      or best.test_y is None
+      or best.row is None
+  ):
+    raise RuntimeError("Evaluation did not produce a valid model candidate")
+
+  best.row["selected"] = True
+  selection_cv = StratifiedKFold(
+    n_splits=best.folds,
+    shuffle=True,
+    random_state=config.random_state,
+  )
+  out_of_fold_probabilities = cross_val_predict(
+    clone(best.estimator),
+    best.train_x,
+    best.train_y,
+    cv=selection_cv,
+    method="predict_proba",
+    n_jobs=1,
+  )[:, 1]
+  threshold_rows = _threshold_table(
+    best.train_y, out_of_fold_probabilities, best.name
+  )
+  selected_threshold = (
+    config.threshold
+    if config.threshold is not None
+    else _recommended_threshold(threshold_rows)
+  )
+  fitted = clone(best.estimator).fit(best.train_x, best.train_y)
+  probabilities = fitted.predict_proba(best.test_x)[:, 1]
+  predicted = probabilities >= selected_threshold
+  holdout_metrics = _metrics(best.test_y, predicted, probabilities)
+  final_result = {
+    "treatment": best.treatment,
+    "model": best.model,
+    "balancing": best.balancing,
+    "threshold": selected_threshold,
+    **holdout_metrics,
+    **{
+      key: value
+      for key, value in best.row.items()
+      if key.startswith("cv_")
+    },
+  }
+  _save_diagnostic_plot(
+    best.test_y,
+    predicted,
+    probabilities,
+    plots / f"{best.name}.png",
+    best.name,
+  )
+  fitted_best = _BestRun(
+    score=best.score,
+    name=best.name,
+    estimator=fitted,
+    test_x=best.test_x,
+    test_y=best.test_y,
+  )
+
   results = pd.DataFrame(rows).sort_values(
-    ["pr_auc", "recall", "f1"], ascending=False
+    ["cv_pr_auc_mean", "cv_recall_mean", "cv_f1_mean"], ascending=False
   )
   results.to_csv(output / "metrics.csv", index=False)
+  pd.DataFrame([final_result]).to_csv(output / "final_metrics.csv", index=False)
   pd.DataFrame(threshold_rows).to_csv(output / "thresholds.csv", index=False)
-  _save_feature_importance(best, output / "feature_importance.csv", config.random_state)
+  _save_feature_importance(
+    fitted_best, output / "feature_importance.csv", config.random_state
+  )
   _save_comparison_plot(results, output / "model_comparison.png")
 
   summary = {
@@ -200,7 +272,12 @@ def run_evaluation(config: EvaluationConfig) -> dict[str, Any]:
     "invalidValuesReplaced": invalid_values_replaced,
     "ignoredColumns": ignored_by_variant,
     "bestRun": best.name,
-    "bestPrAuc": best.score,
+    "bestCvPrAuc": best.score,
+    "selectedThreshold": selected_threshold,
+    "thresholdSelection": (
+      "configured" if config.threshold is not None else "maximum out-of-fold training F1"
+    ),
+    "holdoutMetrics": holdout_metrics,
     "configuration": {
       **asdict(config),
       "dataset_path": str(config.dataset_path.resolve()),
@@ -316,8 +393,20 @@ def _threshold_table(target: pd.Series, probabilities: Any, run: str) -> list[di
       "threshold": float(threshold),
       "precision": float(precision[index]),
       "recall": float(recall[index]),
+      "f1": float(
+        0.0
+        if precision[index] + recall[index] == 0
+        else 2 * precision[index] * recall[index] / (precision[index] + recall[index])
+      ),
     })
   return rows
+
+
+def _recommended_threshold(rows: list[dict[str, Any]]) -> float:
+  if not rows:
+    raise ValueError("Could not select a decision threshold")
+  best = max(rows, key=lambda row: (row["f1"], row["recall"], row["precision"]))
+  return float(best["threshold"])
 
 
 def _save_diagnostic_plot(
@@ -369,8 +458,14 @@ def _save_comparison_plot(results: pd.DataFrame, path: Path) -> None:
   )
   figure, axis = plt.subplots(figsize=(12, 7))
   positions = range(len(top))
-  axis.barh(list(positions), top["pr_auc"], label="PR-AUC")
-  axis.scatter(top["recall"], list(positions), color="#d62728", label="Recall", zorder=3)
+  axis.barh(list(positions), top["cv_pr_auc_mean"], label="CV PR-AUC")
+  axis.scatter(
+    top["cv_recall_mean"],
+    list(positions),
+    color="#d62728",
+    label="CV Recall",
+    zorder=3,
+  )
   axis.set_yticks(list(positions), labels)
   axis.invert_yaxis()
   axis.set_xlim(0, 1)
@@ -394,7 +489,7 @@ def _validate_config(config: EvaluationConfig) -> None:
     raise FileNotFoundError(f"Dataset not found: {config.dataset_path}")
   if not 0 < config.test_size < 1:
     raise ValueError("Test size must be between 0 and 1")
-  if not 0 < config.threshold < 1:
+  if config.threshold is not None and not 0 < config.threshold < 1:
     raise ValueError("Threshold must be between 0 and 1")
   if config.folds < 2:
     raise ValueError("At least 2 folds are required")

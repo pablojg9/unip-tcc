@@ -10,6 +10,7 @@ A documentação vigente está em [ARCHITECTURE.md](./ARCHITECTURE.md) e cobre:
 - camadas Bronze, Silver e Gold;
 - colunas dinâmicas;
 - transactional outbox e Kafka;
+- evidências locais e explicação generativa opcional com fallback;
 - registros rejeitados;
 - confirmação humana de fraude;
 - APIs de consulta e filtros.

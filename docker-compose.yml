@@ -71,9 +71,23 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       FRAUD_MODEL_PATH: /app/artifacts/fraud_model.joblib
       FRAUD_CANDIDATE_DIRECTORY: /app/artifacts/candidates
+      GENERATIVE_EXPLANATION_ENABLED: ${GENERATIVE_EXPLANATION_ENABLED:-false}
+      GENERATIVE_EXPLANATION_URL: ${GENERATIVE_EXPLANATION_URL:-http://ollama:11434/api/generate}
+      GENERATIVE_EXPLANATION_MODEL: ${GENERATIVE_EXPLANATION_MODEL:-llama3.2:1b}
+      GENERATIVE_EXPLANATION_TIMEOUT_SECONDS: ${GENERATIVE_EXPLANATION_TIMEOUT_SECONDS:-8}
     volumes:
       - fraud-imports:/data/imports:ro
       - fraud-models:/app/artifacts
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:0.34.4
+    container_name: fraude-ollama
+    profiles: ["generative-ai"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - fraud-ollama:/root/.ollama
     restart: unless-stopped
 
   frontend:
@@ -89,3 +103,4 @@ volumes:
   fraud-postgres:
   fraud-imports:
   fraud-models:
+  fraud-ollama:

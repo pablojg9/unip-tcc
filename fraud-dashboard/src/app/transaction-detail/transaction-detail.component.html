@@ -55,8 +55,20 @@
           <div><dt>Tipo de score</dt><dd>{{ data.scoreType }}</dd></div>
         </dl>
 
+        <div class="generated-explanation" *ngIf="data.explanation">
+          <div class="explanation-heading">
+            <h3>Explicação da IA</h3>
+            <span [attr.data-type]="data.explanationType">
+              {{ data.explanationType === 'GENERATIVE' ? 'Generativa' : 'Fallback auditável' }}
+            </span>
+          </div>
+          <p>{{ data.explanation }}</p>
+          <small *ngIf="data.explanationModel">Modelo: {{ data.explanationModel }}</small>
+          <small>Texto de apoio; a confirmação de fraude exige revisão humana.</small>
+        </div>
+
         <div class="reasons" *ngIf="data.reasons.length > 0">
-          <h3>Motivos apresentados</h3>
+          <h3>Evidências locais utilizadas</h3>
           <span *ngFor="let reason of data.reasons">{{ reason }}</span>
         </div>
       </article>

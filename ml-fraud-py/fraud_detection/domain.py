@@ -76,6 +76,9 @@ class ScoringResult:
   classification: str
   model_version: str
   reasons: tuple[str, ...]
+  explanation: str = ""
+  explanation_type: str = "DETERMINISTIC"
+  explanation_model: str | None = None
 
   def to_event(self) -> dict[str, Any]:
     return {
@@ -89,4 +92,7 @@ class ScoringResult:
       "classification": self.classification,
       "modelVersion": self.model_version,
       "reasons": list(self.reasons),
+      "explanation": self.explanation,
+      "explanationType": self.explanation_type,
+      "explanationModel": self.explanation_model,
     }

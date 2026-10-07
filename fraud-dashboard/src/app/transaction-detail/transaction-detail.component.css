@@ -26,6 +26,13 @@ dl { margin: 0; }
 dl div { padding: 13px 0; border-top: 1px solid var(--border); }
 dt { color: var(--text-soft); font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
 dd { margin: 5px 0 0; color: var(--text-muted); font-size: 12px; overflow-wrap: anywhere; }
+.generated-explanation { margin-top: 21px; padding: 15px; border: 1px solid rgba(114, 164, 255, .22); border-radius: 12px; background: rgba(79, 140, 255, .06); }
+.explanation-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.explanation-heading h3 { margin: 0; font-size: 13px; }
+.explanation-heading span { padding: 4px 7px; border-radius: 999px; color: #82e5c0; background: rgba(54, 211, 153, .1); font-size: 9px; font-weight: 900; text-transform: uppercase; }
+.explanation-heading span:not([data-type='GENERATIVE']) { color: #f2c36e; background: rgba(248, 189, 85, .08); }
+.generated-explanation p { margin: 12px 0; color: var(--text-muted); font-size: 12px; line-height: 1.65; }
+.generated-explanation small { display: block; margin-top: 5px; color: var(--text-soft); font-size: 9px; }
 .reasons { margin-top: 21px; padding-top: 17px; border-top: 1px solid var(--border); }
 .reasons h3 { margin: 0 0 10px; font-size: 13px; }
 .reasons span { display: block; margin-top: 7px; padding: 9px 10px; border-radius: 9px; color: #f2c36e; background: rgba(248, 189, 85, .07); font-size: 11px; }

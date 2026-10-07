@@ -14,6 +14,9 @@ public record FraudResult(
     String classification,
     String modelVersion,
     List<String> reasons,
+    String explanation,
+    String explanationType,
+    String explanationModel,
     LocalDateTime processedAt
 ){
 }

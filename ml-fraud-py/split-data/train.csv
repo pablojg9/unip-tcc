@@ -1,0 +1,23 @@
+data_sinistro,data_aviso,tipo_sinistro,valor_sinistro,valor_franquia,estado,cidade,dias_ate_aviso,sinistros_ultimos_12m,boletim_ocorrencia,oficina_rede,canal_aviso,descricao,fraude
+2026-07-07 15:00:00,2026-07-16 15:00:00,Colisão,53600.0,4000,SP,Sorocaba,9,4,False,False,Telefone,Orçamentos repetidos e incompatíveis com as imagens.,1
+2026-06-29 15:00:00,2026-06-30 15:00:00,Alagamento,25800.0,2200,RJ,Niterói,1,1,True,True,Portal,Entrada de água no motor durante chuva intensa.,0
+2026-02-10 15:00:00,2026-02-11 15:00:00,Furto,32700.0,0,PR,Curitiba,1,0,True,False,Aplicativo,Furto em estacionamento aberto; chave em posse do segurado.,0
+2026-05-02 15:00:00,2026-05-03 15:00:00,Colisão,15600.0,2000,ES,Vitória,1,0,True,True,Corretor,Colisão em rotatória com testemunha identificada.,0
+2026-04-12 15:00:00,2026-04-26 15:00:00,Perda total,118000.0,0,DF,Brasília,14,2,False,False,Portal,Veículo removido antes da regulação; documentação incompleta.,1
+2026-03-09 15:00:00,2026-03-10 15:00:00,Colisão,9350.0,1500,PE,Recife,1,1,True,True,Portal,Dano lateral em cruzamento com terceiro identificado.,0
+2026-08-06 15:00:00,2026-08-23 15:00:00,Perda total,132500.0,0,BA,Feira de Santana,17,3,False,False,Corretor,"Aviso tardio, condutor não cadastrado e documentos divergentes.",1
+2026-01-08 15:00:00,2026-01-08 15:00:00,Colisão,12850.75,2200,SP,São Paulo,0,0,True,True,Aplicativo,Colisão traseira em via urbana; fotos e boletim anexados.,0
+2026-01-11 15:00:00,2026-01-15 15:00:00,Roubo,68500.0,0,RJ,Rio de Janeiro,4,1,True,False,Telefone,Veículo informado como roubado durante a madrugada.,0
+2026-08-27 15:00:00,2026-08-28 15:00:00,Granizo,7300.0,1000,GO,Anápolis,1,0,False,True,Portal,Amassados distribuídos pela carroceria após granizo.,0
+2026-09-18 15:00:00,2026-09-19 15:00:00,Colisão,33400.0,3200,MG,Contagem,1,1,True,True,Portal,Colisão com poste; imagens compatíveis com a dinâmica informada.,0
+2026-09-11 15:00:00,2026-09-11 15:00:00,Assistência,1250.0,0,DF,Brasília,0,0,False,True,Aplicativo,Pneu danificado e atendimento por prestador credenciado.,0
+2026-09-24 15:00:00,2026-09-30 15:00:00,Roubo,105000.0,0,SP,Guarulhos,6,3,True,False,Corretor,"Apólice próxima da emissão, múltiplos sinistros e inconsistência de localização.",1
+2026-05-26 15:00:00,2026-05-27 15:00:00,Colisão,28900.0,3000,MT,Cuiabá,1,1,True,False,Portal,Saída de pista em rodovia; vistoria pendente.,0
+2026-03-14 15:00:00,2026-03-29 15:00:00,Roubo,74200.0,0,SP,Campinas,15,4,True,False,Corretor,Múltiplos avisos recentes e versões divergentes do horário.,1
+2026-04-18 15:00:00,2026-04-18 15:00:00,Granizo,6400.0,900,SC,Joinville,0,0,False,True,Aplicativo,Danos no teto e capô após tempestade de granizo.,0
+2026-07-28 15:00:00,2026-07-29 15:00:00,Roubo,97200.0,0,PE,Olinda,1,0,True,False,Portal,Roubo com registro policial e rastreador desativado após o evento.,0
+2026-02-03 15:00:00,2026-02-03 15:00:00,Alagamento,18900.5,1800,RS,Porto Alegre,0,0,False,True,Portal,Danos elétricos após alagamento em garagem.,0
+2026-09-03 15:00:00,2026-09-13 15:00:00,Furto,44500.0,0,CE,Juazeiro do Norte,10,2,False,False,Telefone,Chave reserva não apresentada e versão alterada no segundo contato.,1
+2026-03-01 15:00:00,2026-03-01 15:00:00,Vidros,1850.9,450,SC,Florianópolis,0,0,False,True,Aplicativo,Trinca no para-brisa após impacto de pedra.,0
+2026-06-05 15:00:00,2026-06-24 15:00:00,Incêndio,84500.0,0,PA,Belém,19,5,False,False,Corretor,Cobertura contratada recentemente e ausência de laudo técnico.,1
+2026-08-19 15:00:00,2026-08-19 15:00:00,Colisão,17650.0,2500,RS,Caxias do Sul,0,1,True,True,Aplicativo,Colisão traseira em congestionamento.,0

@@ -1,0 +1,9 @@
+data_sinistro,data_aviso,tipo_sinistro,valor_sinistro,valor_franquia,estado,cidade,dias_ate_aviso,sinistros_ultimos_12m,boletim_ocorrencia,oficina_rede,canal_aviso,descricao,fraude
+2026-06-13 15:00:00,2026-06-13 15:00:00,Vidros,2300.0,500,MG,Uberlândia,0,0,False,True,Aplicativo,Quebra de vidro lateral em estacionamento.,0
+2026-05-08 15:00:00,2026-05-20 15:00:00,Furto,59900.0,0,AM,Manaus,12,3,False,False,Telefone,Sem boletim no aviso e última localização incompatível.,1
+2026-02-18 15:00:00,2026-03-07 15:00:00,Incêndio,91000.0,0,BA,Salvador,17,2,False,False,Telefone,Incêndio sem laudo inicial e com divergência no local informado.,1
+2026-05-17 15:00:00,2026-05-17 15:00:00,Assistência,980.0,0,SP,Santos,0,0,False,True,Aplicativo,Pane elétrica com remoção por guincho credenciado.,0
+2026-01-19 15:00:00,2026-02-02 15:00:00,Colisão,47200.0,3500,MG,Belo Horizonte,14,3,False,False,Corretor,Aviso tardio e reparo iniciado antes da vistoria.,1
+2026-07-15 15:00:00,2026-07-15 15:00:00,Danos a terceiros,11200.0,1800,PR,Londrina,0,0,True,True,Aplicativo,Abalroamento lateral com terceiro e boletim digital.,0
+2026-04-04 15:00:00,2026-04-05 15:00:00,Colisão,21400.0,2800,CE,Fortaleza,1,1,True,True,Aplicativo,Colisão frontal com acionamento de airbag.,0
+2026-03-22 15:00:00,2026-03-22 15:00:00,Danos a terceiros,7800.0,1200,GO,Goiânia,0,0,True,True,Telefone,Dano em portão residencial durante manobra.,0

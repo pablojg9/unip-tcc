@@ -46,6 +46,15 @@ public class GoldFraudResultEntity {
   @Column(columnDefinition = "jsonb", nullable = false)
   private List<String> reasons;
 
+  @Column(columnDefinition = "text", nullable = false)
+  private String explanation;
+
+  @Column(length = 32, nullable = false)
+  private String explanationType;
+
+  @Column(length = 120)
+  private String explanationModel;
+
   @Column(nullable = false)
   private LocalDateTime processedAt;
 

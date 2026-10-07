@@ -19,6 +19,8 @@ class TrainingRequest:
   random_state: int = 42
   test_size: float = 0.25
   anomaly_contamination: float = 0.05
+  decision_threshold: float = 0.5
+  ignored_features: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,6 +33,10 @@ class TrainingReport:
   target_column: str | None
   metrics: dict[str, float]
   dataset_sha256: str
+  original_rows: int = 0
+  duplicates_removed: int = 0
+  invalid_values_replaced: int = 0
+  ignored_columns: tuple[str, ...] = ()
 
 
 @dataclass(slots=True)
@@ -70,6 +76,9 @@ class ScoringResult:
   classification: str
   model_version: str
   reasons: tuple[str, ...]
+  explanation: str = ""
+  explanation_type: str = "DETERMINISTIC"
+  explanation_model: str | None = None
 
   def to_event(self) -> dict[str, Any]:
     return {
@@ -83,4 +92,7 @@ class ScoringResult:
       "classification": self.classification,
       "modelVersion": self.model_version,
       "reasons": list(self.reasons),
+      "explanation": self.explanation,
+      "explanationType": self.explanation_type,
+      "explanationModel": self.explanation_model,
     }

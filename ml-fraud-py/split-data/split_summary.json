@@ -1,0 +1,46 @@
+{
+  "dataset": "/Users/pablo/Documents/Unip/unip-tcc/tcc/outputs/sinistro_testes_20260930/sinistros_teste.xlsx",
+  "targetColumn": "fraude",
+  "originalRows": 30,
+  "unlabeledRowsRemoved": 0,
+  "duplicatesRemoved": 0,
+  "invalidValuesReplaced": 0,
+  "ignoredColumns": [
+    "id_sinistro",
+    "numero_apolice",
+    "segurado_id"
+  ],
+  "trainRows": 22,
+  "testRows": 8,
+  "trainFrauds": 7,
+  "testFrauds": 3,
+  "trainPath": "/Users/pablo/Documents/Unip/unip-tcc/ml-fraud-py/split-data/train.csv",
+  "testPath": "/Users/pablo/Documents/Unip/unip-tcc/ml-fraud-py/split-data/test.csv",
+  "configuration": {
+    "dataset_path": "/Users/pablo/Documents/Unip/unip-tcc/tcc/outputs/sinistro_testes_20260930/sinistros_teste.xlsx",
+    "output_directory": "/Users/pablo/Documents/Unip/unip-tcc/ml-fraud-py/split-data",
+    "target_column": null,
+    "target_aliases": [
+      "fraudfound_p",
+      "fraud",
+      "is_fraud",
+      "fraude",
+      "isfraud",
+      "label"
+    ],
+    "ignored_features": [
+      "id",
+      "claim_id",
+      "transaction_id",
+      "id_sinistro",
+      "numero_apolice",
+      "segurado_id",
+      "policy_number",
+      "policynumber",
+      "rep_number",
+      "repnumber"
+    ],
+    "random_state": 42,
+    "test_size": 0.25
+  }
+}

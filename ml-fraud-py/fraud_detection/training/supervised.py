@@ -4,7 +4,15 @@ from datetime import UTC, datetime
 
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
+from sklearn.metrics import (
+    accuracy_score,
+    average_precision_score,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 
@@ -14,9 +22,15 @@ from fraud_detection.preprocessing import build_preprocessor
 
 
 class SupervisedTrainingStrategy:
-    def __init__(self, random_state: int, test_size: float) -> None:
+    def __init__(
+        self,
+        random_state: int,
+        test_size: float,
+        decision_threshold: float = 0.5,
+    ) -> None:
         self._random_state = random_state
         self._test_size = test_size
+        self._decision_threshold = decision_threshold
 
     def train(
         self,
@@ -61,13 +75,21 @@ class SupervisedTrainingStrategy:
             ]
         )
         pipeline.fit(train_x, train_y)
-        predicted = pipeline.predict(test_x)
         probabilities = pipeline.predict_proba(test_x)[:, 1]
+        predicted = probabilities >= self._decision_threshold
+        true_negative, false_positive, false_negative, true_positive = confusion_matrix(
+            test_y, predicted, labels=[0, 1]
+        ).ravel()
         metrics = {
             "accuracy": float(accuracy_score(test_y, predicted)),
             "precision": float(precision_score(test_y, predicted, zero_division=0)),
             "recall": float(recall_score(test_y, predicted, zero_division=0)),
             "f1": float(f1_score(test_y, predicted, zero_division=0)),
+            "pr_auc": float(average_precision_score(test_y, probabilities)),
+            "true_negative": float(true_negative),
+            "false_positive": float(false_positive),
+            "false_negative": float(false_negative),
+            "true_positive": float(true_positive),
         }
         if test_y.nunique() == 2:
             metrics["roc_auc"] = float(roc_auc_score(test_y, probabilities))
@@ -83,7 +105,7 @@ class SupervisedTrainingStrategy:
             feature_columns=tuple(typed.columns),
             numeric_columns=numeric,
             categorical_columns=categorical,
-            threshold=0.5,
+            threshold=self._decision_threshold,
             metrics=metrics,
             target_column=target_column,
             important_features=_important_features(pipeline),

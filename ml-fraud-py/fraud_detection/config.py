@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from fraud_detection.quality import DEFAULT_IGNORED_FEATURES
+
 DEFAULT_TARGET_ALIASES = (
   "fraudfound_p",
   "fraud",
@@ -27,6 +29,12 @@ class Settings:
   anomaly_contamination: float
   kafka_retry_seconds: float
   message_max_retries: int
+  decision_threshold: float = 0.5
+  ignored_features: tuple[str, ...] = DEFAULT_IGNORED_FEATURES
+  generative_explanation_enabled: bool = False
+  generative_explanation_url: str = "http://ollama:11434/api/generate"
+  generative_explanation_model: str = "llama3.2:1b"
+  generative_explanation_timeout_seconds: float = 8.0
   training_requests_topic: str = "model-training-requests"
   training_results_topic: str = "model-training-results"
   activation_requests_topic: str = "model-activation-requests"
@@ -61,6 +69,24 @@ class Settings:
         "KAFKA_RETRY_SECONDS", 5.0, minimum=0.1, maximum=300.0
       ),
       message_max_retries=_integer("KAFKA_MESSAGE_MAX_RETRIES", 3, minimum=1),
+      decision_threshold=_bounded_float(
+        "FRAUD_DECISION_THRESHOLD", 0.5, minimum=0.01, maximum=0.99
+      ),
+      ignored_features=_list(
+        "FRAUD_IGNORED_FEATURES", DEFAULT_IGNORED_FEATURES
+      ),
+      generative_explanation_enabled=_boolean(
+        "GENERATIVE_EXPLANATION_ENABLED", False
+      ),
+      generative_explanation_url=os.getenv(
+        "GENERATIVE_EXPLANATION_URL", "http://ollama:11434/api/generate"
+      ),
+      generative_explanation_model=os.getenv(
+        "GENERATIVE_EXPLANATION_MODEL", "llama3.2:1b"
+      ),
+      generative_explanation_timeout_seconds=_bounded_float(
+        "GENERATIVE_EXPLANATION_TIMEOUT_SECONDS", 8.0, minimum=0.1, maximum=60.0
+      ),
       training_requests_topic=os.getenv(
         "KAFKA_TRAINING_REQUESTS_TOPIC", "model-training-requests"
       ),
@@ -94,3 +120,20 @@ def _bounded_float(name: str, default: float, minimum: float, maximum: float) ->
   if not minimum <= value <= maximum:
     raise ValueError(f"{name} must be between {minimum} and {maximum}")
   return value
+
+
+def _list(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
+  return tuple(
+    value.strip()
+    for value in os.getenv(name, ",".join(default)).split(",")
+    if value.strip()
+  )
+
+
+def _boolean(name: str, default: bool) -> bool:
+  value = os.getenv(name, str(default)).strip().lower()
+  if value in {"1", "true", "yes", "sim"}:
+    return True
+  if value in {"0", "false", "no", "nao", "não"}:
+    return False
+  raise ValueError(f"{name} must be a boolean")

@@ -66,6 +66,9 @@ class PersistenceMapperTest {
         "Suspicious transaction",
         "model-1",
         null,
+        "Explicação local",
+        "DETERMINISTIC",
+        null,
         LocalDateTime.now()
     );
 

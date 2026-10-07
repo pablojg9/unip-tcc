@@ -32,7 +32,10 @@ class FraudResultKafkaConsumerTest {
           "scoreType": "ANOMALY_SCORE",
           "riskLevel": "HIGH",
           "modelVersion": "anomaly-1",
-          "reasons": ["Unusual amount"]
+          "reasons": ["Unusual amount"],
+          "explanation": "O valor atípico elevou o risco e requer revisão humana.",
+          "explanationType": "GENERATIVE",
+          "explanationModel": "llama3.2:1b"
         }
         """);
 
@@ -41,6 +44,8 @@ class FraudResultKafkaConsumerTest {
     assertThat(repository.saved.probability()).isEqualTo(0.825);
     assertThat(repository.saved.scoreType()).isEqualTo("ANOMALY_SCORE");
     assertThat(repository.saved.reasons()).containsExactly("Unusual amount");
+    assertThat(repository.saved.explanationType()).isEqualTo("GENERATIVE");
+    assertThat(repository.saved.explanationModel()).isEqualTo("llama3.2:1b");
   }
 
   @Test

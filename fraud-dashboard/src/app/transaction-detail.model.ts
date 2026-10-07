@@ -9,6 +9,9 @@ export interface TransactionDetail {
   readonly classification: string;
   readonly modelVersion: string | null;
   readonly reasons: readonly string[];
+  readonly explanation: string;
+  readonly explanationType: string;
+  readonly explanationModel: string | null;
   readonly processedAt: string;
   readonly sourceFile: string | null;
   readonly ingestedAt: string | null;

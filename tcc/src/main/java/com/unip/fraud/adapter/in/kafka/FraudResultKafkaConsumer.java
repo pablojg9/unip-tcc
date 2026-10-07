@@ -77,6 +77,9 @@ public class FraudResultKafkaConsumer {
           ),
           stringValue(scoring.modelVersion(), "legacy-model"),
           reasons,
+          stringValue(scoring.explanation(), String.join(" ", reasons)),
+          stringValue(scoring.explanationType(), "DETERMINISTIC"),
+          scoring.explanationModel(),
           LocalDateTime.now()
       );
 

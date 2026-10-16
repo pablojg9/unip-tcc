@@ -1,6 +1,8 @@
 package com.unip.fraud.application.service;
 
+import com.unip.fraud.application.domain.ConfusionMatrix;
 import com.unip.fraud.application.domain.DashboardSummary;
+import com.unip.fraud.application.domain.DecisionMetrics;
 import com.unip.fraud.application.port.in.GetDashboardUseCase;
 import com.unip.fraud.application.port.out.repository.BronzeRepositoryOutPort;
 import com.unip.fraud.application.port.out.repository.GoldRepositoryOutPort;
@@ -41,11 +43,23 @@ public class DashboardService implements GetDashboardUseCase {
         rejectedRepository.count(),
         goldRepository.countRealFraud(),
         predictedFrauds,
+        goldRepository.countPredictedLegitimate(),
+        goldRepository.countPendingPrediction(),
         percentage,
         goldRepository.countByRiskLevel("LOW"),
         goldRepository.countByRiskLevel("MEDIUM"),
         goldRepository.countByRiskLevel("HIGH"),
         goldRepository.countPendingReview()
     );
+  }
+
+  @Override
+  public DecisionMetrics getDecisionMetrics(final boolean predictedFraud) {
+    return goldRepository.getDecisionMetrics(predictedFraud);
+  }
+
+  @Override
+  public ConfusionMatrix getConfusionMatrix() {
+    return goldRepository.getConfusionMatrix();
   }
 }

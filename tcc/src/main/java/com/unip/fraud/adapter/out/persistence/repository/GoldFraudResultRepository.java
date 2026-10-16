@@ -12,7 +12,12 @@ public interface GoldFraudResultRepository
 
   long countByPredictedFraudTrue();
 
-  long countByRiskLevel(final String riskLevel);
+  long countByPredictedFraudFalse();
 
   long countByPredictedFraudIsNull();
+
+  long countByRealFraudIsNull();
+
+  long countByRiskLevel(final String riskLevel);
+
 }

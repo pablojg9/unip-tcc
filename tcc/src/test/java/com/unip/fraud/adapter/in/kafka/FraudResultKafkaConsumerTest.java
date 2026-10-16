@@ -1,6 +1,8 @@
 package com.unip.fraud.adapter.in.kafka;
 
 import com.unip.fraud.application.domain.FraudResult;
+import com.unip.fraud.application.domain.ConfusionMatrix;
+import com.unip.fraud.application.domain.DecisionMetrics;
 import com.unip.fraud.application.domain.FraudResultFilter;
 import com.unip.fraud.application.domain.PageResponse;
 import com.unip.fraud.application.port.out.repository.GoldRepositoryOutPort;
@@ -90,6 +92,11 @@ class FraudResultKafkaConsumerTest {
     }
 
     @Override
+    public long countPredictedLegitimate() {
+      return 0;
+    }
+
+    @Override
     public long countByRiskLevel(String riskLevel) {
       return 0;
     }
@@ -97,6 +104,21 @@ class FraudResultKafkaConsumerTest {
     @Override
     public long countPendingReview() {
       return 0;
+    }
+
+    @Override
+    public long countPendingPrediction() {
+      return 0;
+    }
+
+    @Override
+    public DecisionMetrics getDecisionMetrics(boolean predictedFraud) {
+      return new DecisionMetrics(predictedFraud, 0, 0, 0, 0, 0, 0, "", List.of());
+    }
+
+    @Override
+    public ConfusionMatrix getConfusionMatrix() {
+      return new ConfusionMatrix(0, 0, 0, 0, 0, 0, 0, 0, 0);
     }
 
     @Override

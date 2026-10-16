@@ -32,6 +32,11 @@ public class FraudResultSpecificationFactory {
                 filter.modelVersion(),
                 value -> !value.isBlank(),
                 value -> equals("modelVersion", value)
+            ),
+            when(
+                filter.reviewStatus(),
+                value -> !value.isBlank(),
+                this::reviewStatus
             )
         )
         .flatMap(Optional::stream)
@@ -56,6 +61,16 @@ public class FraudResultSpecificationFactory {
       final String attribute,
       final Object value) {
     return (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get(attribute), value);
+  }
+
+  private Specification<GoldFraudResultEntity> reviewStatus(final String value) {
+    return switch (value.toUpperCase()) {
+      case "PENDING" -> (root, query, criteriaBuilder) ->
+          criteriaBuilder.isNull(root.get("realFraud"));
+      case "REVIEWED" -> (root, query, criteriaBuilder) ->
+          criteriaBuilder.isNotNull(root.get("realFraud"));
+      default -> throw new IllegalArgumentException("Invalid review status");
+    };
   }
 
   private <T extends Comparable<? super T>> Specification<GoldFraudResultEntity>

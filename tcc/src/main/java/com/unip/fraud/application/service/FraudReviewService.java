@@ -10,6 +10,8 @@ import com.unip.fraud.application.port.out.repository.SilverRepositoryOutPort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 import static com.unip.fraud.application.validation.Validation.requireArgument;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -41,6 +43,12 @@ public class FraudReviewService implements ReviewFraudUseCase {
     silverRepository.updateConfirmedFraud(command.transactionId(), confirmedFraud);
     goldRepository.updateConfirmedFraud(command.transactionId(), confirmedFraud);
     return review;
+  }
+
+  @Override
+  public List<FraudReview> getHistory(final String transactionId) {
+    requireArgument(nonNull(transactionId) && !transactionId.isBlank(), "Transaction id is required");
+    return reviewRepository.findByTransactionId(transactionId);
   }
 
   private void validate(final FraudReviewCommand command) {

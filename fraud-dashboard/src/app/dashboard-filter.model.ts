@@ -6,4 +6,5 @@ export interface DashboardFilter {
   readonly endDate?: string;
   readonly riskLevel?: string;
   readonly modelVersion?: string;
+  readonly reviewStatus?: string;
 }

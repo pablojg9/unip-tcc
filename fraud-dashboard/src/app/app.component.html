@@ -57,20 +57,61 @@
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Decisões do modelo</p>
-          <h2>Alertas que exigem atenção</h2>
+          <h2>Fraude x legítimo</h2>
         </div>
-        <span class="big-number">{{ data.predictedFraudPercentage | number:'1.1-1' }}%</span>
+        <span class="total-label">{{ decisionTotal | number }} análises</span>
       </div>
 
-      <div class="prediction-track" aria-label="Percentual previsto como fraude">
-        <span [style.width.%]="data.predictedFraudPercentage"></span>
+      <div class="fraud-overview">
+        <div class="donut-wrap">
+          <div
+            class="fraud-donut"
+            [style.background]="fraudDistributionGradient"
+            role="img"
+            [attr.aria-label]="(predictedFraudCount | number) + ' fraudes, ' + (legitimateCount | number) + ' legítimos e ' + (pendingDecisionCount | number) + ' aguardando decisão'"
+          ></div>
+          <div class="donut-center" aria-hidden="true">
+            <strong>{{ data.predictedFraudPercentage | number:'1.1-1' }}%</strong>
+            <span>com alerta</span>
+          </div>
+        </div>
+
+        <div class="decision-legend">
+          <button
+            type="button"
+            class="decision-item"
+            data-tone="fraud"
+            [class.active]="selectedDecision === 'fraud'"
+            [attr.aria-pressed]="selectedDecision === 'fraud'"
+            (click)="showDecisionDetails('fraud')"
+            aria-label="Ver detalhes das análises classificadas como fraude"
+          >
+            <i aria-hidden="true"></i>
+            <span><b>Fraude</b><small>{{ decisionPercentage(predictedFraudCount) | number:'1.1-1' }}% · ver detalhes</small></span>
+            <strong>{{ predictedFraudCount | number }}</strong>
+          </button>
+          <button
+            type="button"
+            class="decision-item"
+            data-tone="legitimate"
+            [class.active]="selectedDecision === 'legitimate'"
+            [attr.aria-pressed]="selectedDecision === 'legitimate'"
+            (click)="showDecisionDetails('legitimate')"
+            aria-label="Ver detalhes das análises classificadas como legítimas"
+          >
+            <i aria-hidden="true"></i>
+            <span><b>Legítimo</b><small>{{ decisionPercentage(legitimateCount) | number:'1.1-1' }}% · ver detalhes</small></span>
+            <strong>{{ legitimateCount | number }}</strong>
+          </button>
+          <div class="decision-item" data-tone="pending">
+            <i aria-hidden="true"></i>
+            <span><b>Aguardando</b><small>{{ decisionPercentage(pendingDecisionCount) | number:'1.1-1' }}% sem decisão</small></span>
+            <strong>{{ pendingDecisionCount | number }}</strong>
+          </div>
+        </div>
       </div>
 
-      <div class="prediction-stats">
-        <span><strong>{{ data.predictedFraudsByAi }}</strong> alertas da IA</span>
-        <span><strong>{{ data.realFraudsFromDataset }}</strong> fraudes confirmadas</span>
-        <span><strong>{{ data.pendingReview }}</strong> pendentes de revisão</span>
-      </div>
+      <p class="chart-note">{{ data.realFraudsFromDataset | number }} fraudes estão confirmadas no conjunto de dados.</p>
     </article>
 
     <article class="panel risk-panel">
@@ -99,14 +140,153 @@
     </article>
   </section>
 
-  <section class="panel results-panel">
+  <section
+    *ngIf="selectedDecision"
+    class="panel decision-detail-panel"
+    id="decision-details"
+    [attr.data-decision]="selectedDecision"
+    aria-live="polite"
+  >
+    <div class="detail-panel-heading">
+      <div>
+        <p class="eyebrow">Detalhamento da decisão</p>
+        <h2>{{ selectedDecisionLabel }}</h2>
+        <p>Visão analítica dos casos classificados pelo modelo.</p>
+      </div>
+      <button type="button" class="detail-close" (click)="closeDecisionDetails()" aria-label="Fechar detalhamento">×</button>
+    </div>
+
+    <div *ngIf="loadingDecisionDetails" class="detail-loading">
+      <span class="spinner" aria-hidden="true"></span> Consolidando os casos mais recentes…
+    </div>
+
+    <div *ngIf="decisionDetailsError" class="alert error" role="alert">
+      Não foi possível carregar o detalhamento desta categoria.
+    </div>
+
+    <ng-container *ngIf="!loadingDecisionDetails && !decisionDetailsError">
+      <div class="detail-metrics">
+        <div><span>Total da categoria</span><strong>{{ selectedDecisionCount | number }}</strong><small>em todas as análises</small></div>
+        <div><span>Participação</span><strong>{{ (decisionMetrics?.percentage ?? 0) | number:'1.1-1' }}%</strong><small>do total processado</small></div>
+        <div><span>Score médio</span><strong>{{ detailAverageScore | number:'1.1-1' }}%</strong><small>todos os casos da categoria</small></div>
+        <div><span>Modelo predominante</span><strong class="model-value">{{ detailPrimaryModel }}</strong><small>todos os casos da categoria</small></div>
+      </div>
+
+      <div class="decision-detail-grid">
+        <article class="detail-subsection">
+          <div class="subsection-heading">
+            <div><span>Prioridade</span><h3>Distribuição por risco</h3></div>
+            <small>{{ selectedDecisionCount | number }} casos analisados</small>
+          </div>
+          <div class="detail-risk-bars">
+            <div>
+              <span><b>Alto</b><small>{{ detailRiskCount('HIGH') }}</small></span>
+              <div><i class="high" [style.width.%]="detailRiskPercentage('HIGH')"></i></div>
+            </div>
+            <div>
+              <span><b>Médio</b><small>{{ detailRiskCount('MEDIUM') }}</small></span>
+              <div><i class="medium" [style.width.%]="detailRiskPercentage('MEDIUM')"></i></div>
+            </div>
+            <div>
+              <span><b>Baixo</b><small>{{ detailRiskCount('LOW') }}</small></span>
+              <div><i class="low" [style.width.%]="detailRiskPercentage('LOW')"></i></div>
+            </div>
+          </div>
+        </article>
+
+        <article class="detail-subsection">
+          <div class="subsection-heading">
+            <div><span>Explicabilidade</span><h3>Principais evidências</h3></div>
+          </div>
+          <div class="reason-list" *ngIf="detailReasons.length > 0; else noReasons">
+            <div *ngFor="let reason of detailReasons">
+              <span>{{ reason.label }}</span><strong>{{ reason.count }}×</strong>
+            </div>
+          </div>
+          <ng-template #noReasons><p class="detail-empty">Nenhuma evidência específica foi registrada nesta amostra.</p></ng-template>
+        </article>
+      </div>
+
+      <article class="critical-cases">
+        <div class="subsection-heading">
+          <div><span>Investigação</span><h3>Casos com maior score</h3></div>
+          <small>Até 5 casos da amostra</small>
+        </div>
+        <div class="critical-case-list" *ngIf="criticalDecisionResults.length > 0; else noDetailResults">
+          <a *ngFor="let result of criticalDecisionResults" [routerLink]="['/transactions', transactionRoute(result)]">
+            <span><b>{{ claimReference(result) }}</b><small>{{ result.processedAt | date:'dd/MM/yyyy HH:mm' }}</small></span>
+            <span class="risk-badge" [attr.data-risk]="result.riskLevel">{{ riskLabel(result.riskLevel) }}</span>
+            <strong>{{ probability(result) | number:'1.0-1' }}%</strong>
+            <i aria-hidden="true">→</i>
+          </a>
+        </div>
+        <ng-template #noDetailResults><p class="detail-empty">Nenhum caso disponível nesta categoria.</p></ng-template>
+      </article>
+
+      <div class="detail-footer">
+        <p>As métricas são calculadas pelo backend sobre toda a categoria. A lista de casos exibe os mais críticos entre os 100 mais recentes.</p>
+        <button type="button" class="button" (click)="viewDecisionResults()">Ver todos na tabela</button>
+      </div>
+    </ng-container>
+  </section>
+
+  <section class="panel confusion-panel" *ngIf="confusionMatrix as matrix">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Qualidade do modelo</p>
+        <h2>Matriz de confusão</h2>
+        <p>Compara a decisão da IA com os casos que já possuem confirmação.</p>
+      </div>
+      <span class="record-count">{{ matrix.evaluated | number }} avaliados</span>
+    </div>
+
+    <div class="confusion-layout" *ngIf="matrix.evaluated > 0; else noEvaluatedCases">
+      <div class="matrix-wrap">
+        <div class="matrix-axis top">Decisão da IA</div>
+        <div class="matrix-axis side">Confirmação</div>
+        <div class="matrix-grid">
+          <span class="matrix-corner"></span>
+          <b class="matrix-column">Fraude</b>
+          <b class="matrix-column">Legítimo</b>
+          <b class="matrix-row">Fraude</b>
+          <div class="matrix-cell correct"><span>Verdadeiro positivo</span><strong>{{ matrix.truePositive | number }}</strong></div>
+          <div class="matrix-cell warning"><span>Falso negativo</span><strong>{{ matrix.falseNegative | number }}</strong></div>
+          <b class="matrix-row">Legítimo</b>
+          <div class="matrix-cell warning"><span>Falso positivo</span><strong>{{ matrix.falsePositive | number }}</strong></div>
+          <div class="matrix-cell correct"><span>Verdadeiro negativo</span><strong>{{ matrix.trueNegative | number }}</strong></div>
+        </div>
+      </div>
+
+      <div class="quality-metrics">
+        <div><span>Acurácia</span><strong>{{ modelMetricPercentage(matrix.accuracy) | number:'1.1-1' }}%</strong><small>acertos no total avaliado</small></div>
+        <div><span>Precisão</span><strong>{{ modelMetricPercentage(matrix.precision) | number:'1.1-1' }}%</strong><small>alertas que eram fraude</small></div>
+        <div><span>Recall</span><strong>{{ modelMetricPercentage(matrix.recall) | number:'1.1-1' }}%</strong><small>fraudes encontradas pela IA</small></div>
+        <div><span>F1-score</span><strong>{{ modelMetricPercentage(matrix.f1Score) | number:'1.1-1' }}%</strong><small>equilíbrio entre precisão e recall</small></div>
+      </div>
+    </div>
+
+    <ng-template #noEvaluatedCases>
+      <div class="matrix-empty">
+        <strong>Ainda não há casos suficientes para avaliar o modelo.</strong>
+        <span>Revise os casos pendentes para alimentar a matriz de confusão.</span>
+        <button type="button" class="button" (click)="openReviewQueue()">Abrir fila de revisão</button>
+      </div>
+    </ng-template>
+  </section>
+
+  <section class="panel results-panel" id="processed-results">
     <div class="section-heading">
       <div>
         <p class="eyebrow">Investigação</p>
         <h2>Análises processadas</h2>
         <p>Encontre rapidamente os casos que precisam de uma decisão humana.</p>
       </div>
-      <span class="record-count">{{ totalElements | number }} registros</span>
+      <div class="results-heading-actions">
+        <span class="record-count">{{ totalElements | number }} registros</span>
+        <button type="button" class="button secondary queue-button" (click)="openReviewQueue()">
+          {{ (summary?.pendingReview ?? 0) | number }} para revisar
+        </button>
+      </div>
     </div>
 
     <div class="filter-heading">
@@ -128,6 +308,14 @@
           <option value="">Todas</option>
           <option value="true">Sim</option>
           <option value="false">Não</option>
+        </select>
+      </label>
+      <label>
+        <span>Status da revisão</span>
+        <select formControlName="reviewStatus">
+          <option value="">Todos</option>
+          <option value="PENDING">Aguardando revisão</option>
+          <option value="REVIEWED">Revisados</option>
         </select>
       </label>
       <label>
@@ -180,14 +368,15 @@
             <th>Confirmado</th>
             <th>Modelo</th>
             <th>Processamento</th>
+            <th>Ação</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let result of results">
             <td>
-              <a class="transaction-link" [routerLink]="['/transactions', result.transactionId]">
-                <span>{{ result.transactionId }}</span>
-                <small>Ver todos os dados →</small>
+              <a class="transaction-link" [routerLink]="['/transactions', transactionRoute(result)]">
+                <span>{{ claimReference(result) }}</span>
+                <small>Abrir análise completa →</small>
               </a>
             </td>
             <td><span class="risk-badge" [attr.data-risk]="result.riskLevel">{{ riskLabel(result.riskLevel) }}</span></td>
@@ -197,13 +386,18 @@
                 <span><i [style.width.%]="probability(result)"></i></span>
               </div>
             </td>
-            <td><span class="decision-badge" [class.negative]="result.predictedFraud === true">{{ booleanLabel(result.predictedFraud) }}</span></td>
+            <td><span class="decision-badge" [class.negative]="result.predictedFraud === true">{{ fraudLabel(result.predictedFraud) }}</span></td>
             <td><span class="decision-badge neutral" [class.negative]="result.realFraud === true">{{ booleanLabel(result.realFraud) }}</span></td>
             <td>{{ result.modelVersion || '—' }}</td>
             <td>{{ result.processedAt | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td>
+              <a class="review-link" [class.pending]="result.realFraud === null" [routerLink]="['/transactions', transactionRoute(result)]">
+                {{ result.realFraud === null ? 'Revisar' : 'Ver revisão' }} →
+              </a>
+            </td>
           </tr>
           <tr *ngIf="results.length === 0">
-            <td colspan="7" class="empty-state">Nenhum resultado corresponde aos filtros selecionados.</td>
+            <td colspan="8" class="empty-state">Nenhum resultado corresponde aos filtros selecionados.</td>
           </tr>
         </tbody>
       </table>

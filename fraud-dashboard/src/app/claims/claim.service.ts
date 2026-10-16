@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 
 import { PagedResponse } from '../../page/paged-response.model';
 import { Claim, ClaimFilter, DatasetColumn } from './claim.model';
+import { FraudReview, FraudReviewRequest } from './fraud-review.model';
 
 const CLAIMS_API = '/process_fraud_automotive/claims';
 const IMPORTS_API = '/process_fraud_automotive/imports';
@@ -23,6 +24,19 @@ export class ClaimService {
   schema(importId: string): Observable<readonly DatasetColumn[]> {
     return this.http.get<readonly DatasetColumn[]>(
       `${IMPORTS_API}/${encodeURIComponent(importId)}/schema`
+    );
+  }
+
+  review(transactionId: string, request: FraudReviewRequest): Observable<FraudReview> {
+    return this.http.post<FraudReview>(
+      `${CLAIMS_API}/${encodeURIComponent(transactionId)}/reviews`,
+      request
+    );
+  }
+
+  reviewHistory(transactionId: string): Observable<readonly FraudReview[]> {
+    return this.http.get<readonly FraudReview[]>(
+      `${CLAIMS_API}/${encodeURIComponent(transactionId)}/reviews`
     );
   }
 }

@@ -1,0 +1,52 @@
+{
+  "modelVersion": "supervised-rf-20261015230822-b8eae29e",
+  "modelType": "SUPERVISED",
+  "trainedAt": "2026-10-15T23:08:22.785270+00:00",
+  "datasetSha256": "b8eae29ec301b0dab9be7c85369bf072d477ea65925372eb84e0353a4a21b4bc",
+  "targetColumn": "fraude",
+  "threshold": 0.5,
+  "featureColumns": [
+    "data_sinistro",
+    "data_aviso",
+    "tipo_sinistro",
+    "valor_sinistro",
+    "valor_franquia",
+    "estado",
+    "cidade",
+    "dias_ate_aviso",
+    "sinistros_ultimos_12m",
+    "boletim_ocorrencia",
+    "oficina_rede",
+    "canal_aviso",
+    "descricao"
+  ],
+  "numericColumns": [
+    "data_sinistro",
+    "data_aviso",
+    "valor_sinistro",
+    "valor_franquia",
+    "dias_ate_aviso",
+    "sinistros_ultimos_12m"
+  ],
+  "categoricalColumns": [
+    "tipo_sinistro",
+    "estado",
+    "cidade",
+    "boletim_ocorrencia",
+    "oficina_rede",
+    "canal_aviso",
+    "descricao"
+  ],
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "pr_auc": 1.0,
+    "true_negative": 5.0,
+    "false_positive": 0.0,
+    "false_negative": 0.0,
+    "true_positive": 3.0,
+    "roc_auc": 1.0
+  }
+}

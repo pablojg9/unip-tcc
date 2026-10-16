@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
+import java.util.List;
 
 @RestController
 @RequestMapping("/claims")
@@ -67,6 +68,11 @@ public class ClaimController {
         request.notes(),
         request.reviewer()
     ));
+  }
+
+  @GetMapping("/{transactionId}/reviews")
+  public List<FraudReview> reviewHistory(@PathVariable final String transactionId) {
+    return reviewFraudUseCase.getHistory(transactionId);
   }
 
   public record ReviewRequest(

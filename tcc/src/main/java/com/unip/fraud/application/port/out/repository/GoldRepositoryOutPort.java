@@ -1,5 +1,7 @@
 package com.unip.fraud.application.port.out.repository;
 
+import com.unip.fraud.application.domain.ConfusionMatrix;
+import com.unip.fraud.application.domain.DecisionMetrics;
 import com.unip.fraud.application.domain.FraudResult;
 import com.unip.fraud.application.domain.FraudResultFilter;
 import com.unip.fraud.application.domain.PageResponse;
@@ -15,9 +17,17 @@ public interface GoldRepositoryOutPort {
 
   long countPredictedFraud();
 
+  long countPredictedLegitimate();
+
   long countByRiskLevel(final String riskLevel);
 
+  long countPendingPrediction();
+
   long countPendingReview();
+
+  DecisionMetrics getDecisionMetrics(boolean predictedFraud);
+
+  ConfusionMatrix getConfusionMatrix();
 
   PageResponse<FraudResult> findByFilter(final FraudResultFilter filter, final int page, final int size);
 

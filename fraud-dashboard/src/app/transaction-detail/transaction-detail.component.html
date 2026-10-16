@@ -15,7 +15,7 @@
     <section class="detail-hero">
       <div>
         <p class="eyebrow">Análise individual</p>
-        <h1>{{ data.transactionId }}</h1>
+        <h1>{{ transactionReference }}</h1>
         <p>Resultado rastreável da importação, normalização e inferência do modelo.</p>
       </div>
       <div class="decision-block">
@@ -42,6 +42,76 @@
         <strong>{{ data.modelVersion || 'Não informado' }}</strong>
         <small>{{ data.scoreType }} · {{ data.classification }}</small>
       </article>
+    </section>
+
+    <section class="panel review-workspace">
+      <div class="review-heading">
+        <div>
+          <p class="eyebrow">Revisão humana</p>
+          <h2>Decisão do analista</h2>
+          <p>Confirme ou corrija a classificação. Cada decisão permanece registrada no histórico.</p>
+        </div>
+        <span class="review-status" [class.pending]="data.realFraud === null">
+          {{ data.realFraud === null ? 'Aguardando revisão' : 'Caso revisado' }}
+        </span>
+      </div>
+
+      <div class="review-layout">
+        <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
+          <fieldset>
+            <legend>Qual é a conclusão da análise?</legend>
+            <div class="decision-options">
+              <label data-decision="fraud">
+                <input type="radio" formControlName="decision" value="FRAUD">
+                <span><b>Confirmar fraude</b><small>Há evidências suficientes de irregularidade.</small></span>
+              </label>
+              <label data-decision="legitimate">
+                <input type="radio" formControlName="decision" value="LEGITIMATE">
+                <span><b>Marcar como legítimo</b><small>O sinistro não apresenta fraude.</small></span>
+              </label>
+              <label data-decision="inconclusive">
+                <input type="radio" formControlName="decision" value="INCONCLUSIVE">
+                <span><b>Inconclusivo</b><small>Mais informações são necessárias.</small></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="review-fields">
+            <label>
+              <span>Responsável pela revisão</span>
+              <input type="text" formControlName="reviewer" maxlength="120" placeholder="Nome do analista">
+              <small *ngIf="reviewForm.controls.reviewer.touched && reviewForm.controls.reviewer.invalid">Informe o responsável.</small>
+            </label>
+            <label>
+              <span>Justificativa ou observações</span>
+              <textarea formControlName="notes" maxlength="2000" rows="4" placeholder="Descreva os elementos considerados na decisão."></textarea>
+              <small>{{ reviewForm.controls.notes.value.length }}/2000 caracteres</small>
+            </label>
+          </div>
+
+          <div *ngIf="reviewSuccess" class="alert review-success" role="status">Revisão registrada e indicadores atualizados.</div>
+          <div *ngIf="reviewError" class="alert error" role="alert">Não foi possível registrar a revisão. Tente novamente.</div>
+
+          <button type="submit" class="button" [disabled]="reviewForm.invalid || submittingReview">
+            {{ submittingReview ? 'Registrando decisão…' : 'Registrar revisão' }}
+          </button>
+        </form>
+
+        <aside class="review-history">
+          <div class="history-heading"><h3>Histórico</h3><span>{{ reviews.length }}</span></div>
+          <p *ngIf="loadingReviews" class="history-empty">Carregando revisões…</p>
+          <div class="history-list" *ngIf="!loadingReviews && reviews.length > 0; else emptyHistory">
+            <article *ngFor="let review of reviews" [attr.data-decision]="review.decision">
+              <div><strong>{{ decisionLabel(review.decision) }}</strong><time>{{ review.reviewedAt | date:'dd/MM/yyyy HH:mm' }}</time></div>
+              <span>{{ review.reviewer || 'Responsável não informado' }}</span>
+              <p *ngIf="review.notes">{{ review.notes }}</p>
+            </article>
+          </div>
+          <ng-template #emptyHistory>
+            <p *ngIf="!loadingReviews" class="history-empty">Nenhuma revisão registrada para este sinistro.</p>
+          </ng-template>
+        </aside>
+      </div>
     </section>
 
     <section class="content-grid">

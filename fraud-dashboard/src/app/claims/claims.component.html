@@ -14,7 +14,7 @@
     <form [formGroup]="filterForm" (ngSubmit)="applyFilters()">
       <label class="wide">
         <span>Buscar em todos os dados</span>
-        <input type="search" formControlName="search" placeholder="ID, arquivo ou valor presente na linha">
+        <input type="search" formControlName="search" placeholder="Arquivo ou valor presente na linha">
       </label>
       <label>
         <span>Importação</span>
@@ -66,7 +66,7 @@
       >
         <span class="row-index">#{{ claim.rowNumber }}</span>
         <span class="row-main">
-          <strong>{{ claim.transactionId }}</strong>
+          <strong>{{ claimReference(claim) }}</strong>
           <small>{{ preview(claim) || 'Linha sem atributos adicionais' }}</small>
         </span>
         <span class="fraud-state" [class.fraud]="claim.confirmedFraud === true" [class.unknown]="claim.confirmedFraud === null">
@@ -94,7 +94,7 @@
 
       <dl>
         <div><dt>Arquivo</dt><dd>{{ claim.sourceFile }}</dd></div>
-        <div><dt>ID</dt><dd>{{ claim.transactionId }}</dd></div>
+        <div><dt>Referência</dt><dd>{{ claimReference(claim) }}</dd></div>
         <div><dt>Rótulo confirmado</dt><dd>{{ fraudLabel(claim.confirmedFraud) }}</dd></div>
       </dl>
 
@@ -110,7 +110,7 @@
         </div>
       </div>
 
-      <a class="button detail-link" [routerLink]="['/transactions', claim.transactionId]">Abrir análise da IA</a>
+      <a class="button detail-link" [routerLink]="['/transactions', transactionRoute(claim)]">Abrir análise da IA</a>
     </aside>
 
     <ng-template #selectHint>

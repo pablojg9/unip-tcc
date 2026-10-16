@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.unip.fraud.application.validation.Validation.requireArgument;
 import static java.util.Objects.isNull;
@@ -34,6 +35,7 @@ public class FraudResultService implements GetFraudResultsUseCase, GetFraudResul
   public PageResponse<FraudResult> getResults(final FraudResultFilter filter, final int page, final int size) {
     requireArgument(isNull(filter.minProbability()) || filter.minProbability() >= 0 && filter.minProbability() <= 1, "Minimum probability must be between 0 and 1");
     requireArgument(isNull(filter.startDate())  || isNull(filter.endDate()) || !filter.startDate().isAfter(filter.endDate()), "Start date must not be after end date");
+    requireArgument(isNull(filter.reviewStatus()) || Set.of("PENDING", "REVIEWED").contains(filter.reviewStatus().toUpperCase()), "Review status must be PENDING or REVIEWED");
     return goldRepository.findByFilter(filter, Math.max(page, 0), Math.clamp(size, 1, 100));
   }
 

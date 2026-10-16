@@ -7,6 +7,8 @@ public record DashboardSummary(
     long totalRejected,
     long realFraudsFromDataset,
     long predictedFraudsByAi,
+    long predictedLegitimateByAi,
+    long pendingPrediction,
     double predictedFraudPercentage,
     long lowRisk,
     long mediumRisk,

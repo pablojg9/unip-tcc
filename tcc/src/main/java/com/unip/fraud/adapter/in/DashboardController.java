@@ -1,5 +1,7 @@
 package com.unip.fraud.adapter.in;
 
+import com.unip.fraud.application.domain.ConfusionMatrix;
+import com.unip.fraud.application.domain.DecisionMetrics;
 import com.unip.fraud.application.domain.FraudResult;
 import com.unip.fraud.application.domain.FraudResultDetail;
 import com.unip.fraud.application.domain.FraudResultFilter;
@@ -40,6 +42,17 @@ public class DashboardController {
     return getDashboardUseCase.getSummary();
   }
 
+  @GetMapping("/decision-details")
+  public DecisionMetrics getDecisionMetrics(
+      @RequestParam final boolean predictedFraud) {
+    return getDashboardUseCase.getDecisionMetrics(predictedFraud);
+  }
+
+  @GetMapping("/confusion-matrix")
+  public ConfusionMatrix getConfusionMatrix() {
+    return getDashboardUseCase.getConfusionMatrix();
+  }
+
   @GetMapping("/results")
   public PageResponse<FraudResult> getResults(
       @RequestParam(required = false) final Boolean predictedFraud,
@@ -51,6 +64,7 @@ public class DashboardController {
       @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) final LocalDateTime endDate,
       @RequestParam(required = false) final String riskLevel,
       @RequestParam(required = false) final String modelVersion,
+      @RequestParam(required = false) final String reviewStatus,
       @RequestParam(defaultValue = "0") final int page,
       @RequestParam(defaultValue = "10") final int size) {
     final FraudResultFilter filter = new FraudResultFilter(
@@ -60,7 +74,8 @@ public class DashboardController {
         startDate,
         endDate,
         riskLevel,
-        modelVersion
+        modelVersion,
+        reviewStatus
     );
 
     return getFraudResultsUseCase.getResults(filter, page, size);

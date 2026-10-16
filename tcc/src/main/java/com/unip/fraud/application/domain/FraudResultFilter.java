@@ -9,6 +9,7 @@ public record FraudResultFilter(
     LocalDateTime startDate,
     LocalDateTime endDate,
     String riskLevel,
-    String modelVersion
+    String modelVersion,
+    String reviewStatus
 ) {
 }

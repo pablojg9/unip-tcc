@@ -7,6 +7,8 @@ import { DashboardFilter } from './dashboard-filter.model';
 import { DashboardSummary } from './dashboard-summary.model';
 import { FraudResult } from './fraud-result.model';
 import { TransactionDetail } from './transaction-detail.model';
+import { DecisionMetrics } from './decision-metrics.model';
+import { ConfusionMatrix } from './confusion-matrix.model';
 
 const API_ROOT = '/process_fraud_automotive/dashboard';
 
@@ -16,6 +18,16 @@ export class DashboardService {
 
   getSummary(): Observable<DashboardSummary> {
     return this.http.get<DashboardSummary>(`${API_ROOT}/summary`);
+  }
+
+  getDecisionMetrics(predictedFraud: boolean): Observable<DecisionMetrics> {
+    return this.http.get<DecisionMetrics>(`${API_ROOT}/decision-details`, {
+      params: new HttpParams().set('predictedFraud', predictedFraud)
+    });
+  }
+
+  getConfusionMatrix(): Observable<ConfusionMatrix> {
+    return this.http.get<ConfusionMatrix>(`${API_ROOT}/confusion-matrix`);
   }
 
   getResults(

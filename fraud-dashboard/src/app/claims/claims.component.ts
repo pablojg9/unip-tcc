@@ -9,6 +9,7 @@ import { ImportJob } from '../imports/import.model';
 import { ImportService } from '../imports/import.service';
 import { Claim, ClaimFilter, DatasetColumn } from './claim.model';
 import { ClaimService } from './claim.service';
+import { claimReference, transactionRouteKey } from '../claim-reference.util';
 
 @Component({
   selector: 'app-claims',
@@ -122,6 +123,14 @@ export class ClaimsComponent implements OnInit {
 
   fraudLabel(value: boolean | null): string {
     return value === null ? 'Sem rótulo' : value ? 'Fraude' : 'Legítimo';
+  }
+
+  claimReference(claim: Claim): string {
+    return claimReference(claim.transactionId, claim.processedAt);
+  }
+
+  transactionRoute(claim: Claim): string {
+    return transactionRouteKey(claim.transactionId);
   }
 
   formatLabel(value: string): string {

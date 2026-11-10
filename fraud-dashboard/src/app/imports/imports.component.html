@@ -23,15 +23,18 @@
         <input #fileInput type="file" accept=".csv,.xls,.xlsx" (change)="chooseFile($event)">
         <span>{{ selectedFile ? 'Trocar arquivo' : 'Selecionar arquivo' }}</span>
       </label>
-      <button type="button" class="button" (click)="upload()" [disabled]="!selectedFile || uploading">
+      <button type="button" class="button" (click)="upload()" [disabled]="uploading">
         {{ uploading ? 'Enviando arquivo…' : 'Iniciar análise' }}
       </button>
     </div>
+    <p *ngIf="!selectedFile" class="chart-note">Primeiro clique em Selecionar arquivo e escolha o arquivo que deseja analisar.</p>
     <div *ngIf="selectedFile" class="selected-file">
       <strong>{{ selectedFile.name }}</strong><span>{{ fileSize(selectedFile) }}</span>
     </div>
   </section>
 
+  <div *ngIf="uploadSuccess" class="alert" role="status">{{ uploadSuccess }}</div>
+  <div *ngIf="uploading" class="alert" role="status">Enviando e validando o arquivo. Aguarde…</div>
   <div *ngIf="uploadError" class="alert error" role="alert">{{ uploadError }}</div>
   <div *ngIf="loadError" class="alert error" role="alert">Não foi possível carregar o histórico de importações.</div>
 
@@ -39,12 +42,12 @@
     <article class="panel history-panel">
       <div class="section-heading">
         <div><p class="eyebrow">Histórico</p><h2>Análises recentes</h2></div>
-        <span class="auto-update"><i></i> Atualização automática</span>
+        <button type="button" class="button ghost" (click)="refreshImports()" [disabled]="loading">Atualizar lista</button>
       </div>
 
       <div *ngIf="loading" class="empty">Carregando importações…</div>
       <button
-        *ngFor="let job of imports"
+        *ngFor="let job of imports; trackBy: trackImport"
         type="button"
         class="import-row"
         [class.selected]="selectedImport?.importId === job.importId"

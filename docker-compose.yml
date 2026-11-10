@@ -39,6 +39,33 @@ services:
       retries: 20
       start_period: 10s
 
+  akhq:
+    image: tchiotludo/akhq:0.27.1
+    container_name: fraude-akhq
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      MICRONAUT_SECURITY_TOKEN_JWT_SIGNATURES_SECRET_GENERATOR_SECRET: ${AKHQ_JWT_SECRET:?Defina AKHQ_JWT_SECRET no .env}
+      AKHQ_CONFIGURATION: |
+        micronaut:
+          security:
+            enabled: true
+        akhq:
+          security:
+            default-group: no-roles
+            basic-auth:
+              - username: ${AKHQ_USERNAME:?Defina AKHQ_USERNAME no .env}
+                password: ${AKHQ_PASSWORD_SHA256:?Defina AKHQ_PASSWORD_SHA256 no .env}
+                groups:
+                  - reader
+          connections:
+            fraude-local:
+              properties:
+                bootstrap.servers: "kafka:29092"
+    ports:
+      - "127.0.0.1:8081:8080"
+
   # backend:
   #   build: ./tcc
   #   container_name: fraude-backend

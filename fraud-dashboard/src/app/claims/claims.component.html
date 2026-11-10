@@ -69,8 +69,8 @@
           <strong>{{ claimReference(claim) }}</strong>
           <small>{{ preview(claim) || 'Linha sem atributos adicionais' }}</small>
         </span>
-        <span class="fraud-state" [class.fraud]="claim.confirmedFraud === true" [class.unknown]="claim.confirmedFraud === null">
-          {{ fraudLabel(claim.confirmedFraud) }}
+        <span class="fraud-state" [class.fraud]="claim.predictedFraud === true" [class.unknown]="claim.classification === null">
+          IA: {{ predictionLabel(claim) }}
         </span>
       </button>
 
@@ -95,7 +95,8 @@
       <dl>
         <div><dt>Arquivo</dt><dd>{{ claim.sourceFile }}</dd></div>
         <div><dt>Referência</dt><dd>{{ claimReference(claim) }}</dd></div>
-        <div><dt>Rótulo confirmado</dt><dd>{{ fraudLabel(claim.confirmedFraud) }}</dd></div>
+        <div><dt>Classificação da IA</dt><dd>{{ predictionLabel(claim) }}</dd></div>
+        <div><dt>Confirmação humana</dt><dd>{{ confirmationLabel(claim.confirmedFraud) }}</dd></div>
       </dl>
 
       <label class="attribute-search">
@@ -110,7 +111,7 @@
         </div>
       </div>
 
-      <a class="button detail-link" [routerLink]="['/transactions', transactionRoute(claim)]">Abrir análise da IA</a>
+      <a *ngIf="claim.classification !== null" class="button detail-link" [routerLink]="['/transactions', transactionRoute(claim)]">Abrir análise da IA</a>
     </aside>
 
     <ng-template #selectHint>

@@ -18,5 +18,5 @@ public interface TransactionOutboxRepository extends JpaRepository<TransactionOu
       FOR UPDATE SKIP LOCKED
       """, nativeQuery = true)
   List<TransactionOutboxEntity> findPendingForUpdate(@Param("limit") int limit);
-  boolean existsByAggregateIdAndEventType(String aggregateId, String eventType);
+  boolean existsByAggregateIdAndEventType(final String aggregateId, final String eventType);
 }

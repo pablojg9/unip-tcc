@@ -1,6 +1,9 @@
 package com.unip.fraud.adapter.out.persistence.adapter;
 
 import com.unip.fraud.adapter.out.persistence.mapper.SilverEntityMapper;
+import com.unip.fraud.adapter.out.persistence.entity.GoldFraudResultEntity;
+import com.unip.fraud.adapter.out.persistence.entity.SilverTransactionEntity;
+import com.unip.fraud.adapter.out.persistence.repository.GoldFraudResultRepository;
 import com.unip.fraud.adapter.out.persistence.repository.SilverTransactionRepository;
 import com.unip.fraud.application.domain.ClaimFilter;
 import com.unip.fraud.application.domain.ClaimRecord;
@@ -13,21 +16,26 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class ClaimQueryPersistenceAdapter implements ClaimQueryRepositoryOutPort {
 
   private final SilverTransactionRepository repository;
+  private final GoldFraudResultRepository goldRepository;
   private final EntityManager entityManager;
   private final SilverEntityMapper mapper;
 
   public ClaimQueryPersistenceAdapter(
       final SilverTransactionRepository repository,
+      final GoldFraudResultRepository goldRepository,
       final EntityManager entityManager,
       final SilverEntityMapper mapper) {
     this.repository = repository;
+    this.goldRepository = goldRepository;
     this.entityManager = entityManager;
     this.mapper = mapper;
   }
@@ -37,15 +45,23 @@ public class ClaimQueryPersistenceAdapter implements ClaimQueryRepositoryOutPort
       final ClaimFilter filter,
       final int page,
       final int size) {
-    final Page<ClaimRecord> result = repository.findDynamic(
+    final Page<SilverTransactionEntity> result = repository.findDynamic(
         filter.importId() == null ? null : filter.importId().toString(),
         blankToNull(filter.search()),
         blankToNull(filter.field()),
         blankToNull(filter.value()),
         PageRequest.of(page, size)
-    ).map(mapper::toClaimRecord);
+    );
+    final Map<String, GoldFraudResultEntity> predictions = goldRepository.findAllById(
+        result.getContent().stream().map(SilverTransactionEntity::getTransactionId).toList()
+    ).stream().collect(Collectors.toMap(
+        prediction -> prediction.getTransactionId(),
+        prediction -> prediction
+    ));
     return new PageResponse<>(
-        result.getContent(),
+        result.getContent().stream()
+            .map(entity -> toClaimRecord(entity, predictions.get(entity.getTransactionId())))
+            .toList(),
         result.getNumber(),
         result.getSize(),
         result.getTotalElements(),
@@ -55,7 +71,21 @@ public class ClaimQueryPersistenceAdapter implements ClaimQueryRepositoryOutPort
 
   @Override
   public Optional<ClaimRecord> findByTransactionId(final String transactionId) {
-    return repository.findById(transactionId).map(mapper::toClaimRecord);
+    return repository.findById(transactionId).map(entity -> toClaimRecord(
+        entity, goldRepository.findById(transactionId).orElse(null)
+    ));
+  }
+
+  private ClaimRecord toClaimRecord(
+      final SilverTransactionEntity entity,
+      final GoldFraudResultEntity prediction) {
+    final ClaimRecord claim = mapper.toClaimRecord(entity);
+    return new ClaimRecord(
+        claim.transactionId(), claim.importId(), claim.rowNumber(), claim.sourceFile(),
+        claim.confirmedFraud(), prediction == null ? null : prediction.getPredictedFraud(),
+        prediction == null ? null : prediction.getClassification(),
+        claim.data(), claim.processedAt()
+    );
   }
 
   @Override

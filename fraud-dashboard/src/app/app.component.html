@@ -42,7 +42,7 @@
   </div>
 
   <section class="metric-grid" aria-label="Indicadores da arquitetura medalhão">
-    <article *ngFor="let metric of metrics" class="metric-card" [attr.data-tone]="metric.tone">
+    <article *ngFor="let metric of metrics; trackBy: trackMetric" class="metric-card" [attr.data-tone]="metric.tone">
       <div class="metric-heading">
         <span class="metric-label"><i aria-hidden="true"></i><span>{{ metric.label }}</span></span>
         <span class="layer-tag">{{ metric.layer }}</span>
@@ -52,66 +52,35 @@
     </article>
   </section>
 
-  <section class="insight-grid" *ngIf="summary as data">
+  <section class="insight-grid">
+    <ng-container *ngIf="summary as data; else chartPlaceholder">
     <article class="panel prediction-panel">
       <div class="panel-heading">
         <div>
           <p class="eyebrow">Decisões do modelo</p>
-          <h2>Fraude x legítimo</h2>
+          <h2>Distribuição das decisões</h2>
         </div>
         <span class="total-label">{{ decisionTotal | number }} análises</span>
       </div>
 
       <div class="fraud-overview">
         <div class="donut-wrap">
-          <div
-            class="fraud-donut"
-            [style.background]="fraudDistributionGradient"
-            role="img"
-            [attr.aria-label]="(predictedFraudCount | number) + ' fraudes, ' + (legitimateCount | number) + ' legítimos e ' + (pendingDecisionCount | number) + ' aguardando decisão'"
-          ></div>
-          <div class="donut-center" aria-hidden="true">
-            <strong>{{ data.predictedFraudPercentage | number:'1.1-1' }}%</strong>
-            <span>com alerta</span>
-          </div>
+          <svg class="distribution-pie" viewBox="0 0 320 220" role="img" aria-label="Distribuição das decisões da IA">
+            <circle cx="160" cy="110" r="70" class="pie-empty"/>
+            <g *ngFor="let slice of predictionSlices; trackBy: trackSlice" class="pie-slice" tabindex="0" [attr.aria-label]="slice.label + ': ' + slice.value">
+              <circle cx="160" cy="110" r="35" fill="none" [attr.stroke]="slice.color" stroke-width="70" pathLength="100" [attr.stroke-dasharray]="slice.percentage + ' ' + (100 - slice.percentage)" [attr.stroke-dashoffset]="-slice.offset" transform="rotate(-90 160 110)"/>
+              <title>{{ slice.label }}: {{ slice.value }} ({{ slice.percentage | number:'1.1-1' }}%)</title>
+              <g class="pie-tooltip"><rect x="5" y="5" width="310" height="34" rx="7"/><text x="160" y="27" text-anchor="middle">{{ slice.label }} · {{ slice.value }}</text></g>
+            </g>
+          </svg>
         </div>
-
         <div class="decision-legend">
-          <button
-            type="button"
-            class="decision-item"
-            data-tone="fraud"
-            [class.active]="selectedDecision === 'fraud'"
-            [attr.aria-pressed]="selectedDecision === 'fraud'"
-            (click)="showDecisionDetails('fraud')"
-            aria-label="Ver detalhes das análises classificadas como fraude"
-          >
-            <i aria-hidden="true"></i>
-            <span><b>Fraude</b><small>{{ decisionPercentage(predictedFraudCount) | number:'1.1-1' }}% · ver detalhes</small></span>
-            <strong>{{ predictedFraudCount | number }}</strong>
-          </button>
-          <button
-            type="button"
-            class="decision-item"
-            data-tone="legitimate"
-            [class.active]="selectedDecision === 'legitimate'"
-            [attr.aria-pressed]="selectedDecision === 'legitimate'"
-            (click)="showDecisionDetails('legitimate')"
-            aria-label="Ver detalhes das análises classificadas como legítimas"
-          >
-            <i aria-hidden="true"></i>
-            <span><b>Legítimo</b><small>{{ decisionPercentage(legitimateCount) | number:'1.1-1' }}% · ver detalhes</small></span>
-            <strong>{{ legitimateCount | number }}</strong>
-          </button>
-          <div class="decision-item" data-tone="pending">
-            <i aria-hidden="true"></i>
-            <span><b>Aguardando</b><small>{{ decisionPercentage(pendingDecisionCount) | number:'1.1-1' }}% sem decisão</small></span>
-            <strong>{{ pendingDecisionCount | number }}</strong>
-          </div>
+          <div class="decision-item" *ngFor="let slice of predictionSlices; trackBy: trackSlice"><i [style.background]="slice.color"></i><span><b>{{ slice.label }}</b><small>{{ slice.percentage | number:'1.1-1' }}%</small></span><strong>{{ slice.value | number }}</strong></div>
         </div>
       </div>
-
-      <p class="chart-note">{{ data.realFraudsFromDataset | number }} fraudes estão confirmadas no conjunto de dados.</p>
+      <p class="chart-note">Distribuição das classificações produzidas pelo modelo. A confirmação humana é avaliada separadamente na matriz de confusão.</p>
+      <p class="chart-note" *ngIf="!decisionTotal">Ainda não há análises processadas.</p>
+      <div class="primary-actions"><button class="button ghost" (click)="showDecisionDetails('fraud')">Previsões de fraude</button><button class="button ghost" (click)="showDecisionDetails('legitimate')">Previsões legítimas</button></div>
     </article>
 
     <article class="panel risk-panel">
@@ -138,6 +107,42 @@
         </div>
       </div>
     </article>
+  <article class="panel trend-panel" aria-label="Tendência de detecção de fraude">
+    <div class="panel-heading">
+      <div><p class="eyebrow">Evolução das análises</p><h2>Fraud Detection Trends</h2></div>
+      <span class="total-label">Página atual · {{ results.length }} registros</span>
+    </div>
+    <p class="chart-note">Contagem por dia de processamento nos resultados da página atual. Os filtros e a paginação alteram esta amostra.</p>
+    <div class="trend-chart" *ngIf="!loadingResults && !resultsError && trendDays.length; else noTrend">
+      <svg viewBox="0 0 640 280" role="img" aria-label="Linhas de fraudes e casos legítimos por dia">
+        <g *ngFor="let fraction of [0, 0.25, 0.5, 0.75, 1]">
+          <line x1="50" x2="590" [attr.y1]="trendY(trendMaximum * fraction)" [attr.y2]="trendY(trendMaximum * fraction)" class="chart-grid"/>
+          <text x="38" [attr.y]="trendY(trendMaximum * fraction) + 4" text-anchor="end">{{ trendMaximum * fraction | number:'1.0-1' }}</text>
+        </g>
+        <path class="trend-line legitimate-line" [attr.d]="trendPath('legitimate')" pathLength="1"/>
+        <path class="trend-line fraud-line" [attr.d]="trendPath('fraud')" pathLength="1"/>
+        <g *ngFor="let day of trendDays; let i = index; trackBy: trackTrendDay">
+          <text [attr.x]="trendX(i)" y="257" text-anchor="middle">{{ day.label }}</text>
+          <circle tabindex="0" class="trend-point legitimate-point" [attr.cx]="trendX(i)" [attr.cy]="trendY(day.legitimate)" r="5" [attr.aria-label]="day.label + ': ' + day.legitimate + ' legítimos'"><title>{{ day.label }} · {{ day.legitimate }} legítimos</title></circle>
+          <circle tabindex="0" class="trend-point fraud-point" [attr.cx]="trendX(i)" [attr.cy]="trendY(day.fraud)" r="5" [attr.aria-label]="day.label + ': ' + day.fraud + ' fraudes'"><title>{{ day.label }} · {{ day.fraud }} fraudes</title></circle>
+        </g>
+      </svg>
+      <div class="trend-legend"><span><i class="fraud-point"></i>Fraude</span><span><i class="legitimate-point"></i>Legítimo</span></div>
+    </div>
+    <ng-template #noTrend><div class="trend-empty">{{ loadingResults ? 'Carregando tendência…' : resultsError ? 'Tendência indisponível. Sincronize os dados para tentar novamente.' : 'Nenhum resultado com data de processamento nesta página.' }}</div></ng-template>
+  </article>
+
+    </ng-container>
+    <ng-template #chartPlaceholder>
+      <article class="panel prediction-panel">
+        <div class="panel-heading"><h2>Transaction Distribution</h2><span class="total-label">Sem dados</span></div>
+        <div class="chart-placeholder"><div class="empty-donut" aria-hidden="true"></div><p>{{ loadingSummary ? 'Carregando distribuição…' : 'Aguardando dados para mostrar a distribuição de fraudes e casos legítimos.' }}</p></div>
+      </article>
+      <article class="panel risk-panel">
+        <div class="panel-heading"><h2>Distribuição por risco</h2><span class="total-label">Sem dados</span></div>
+        <div class="chart-placeholder"><div class="empty-bars" aria-hidden="true"><i></i><i></i><i></i></div><p>{{ loadingSummary ? 'Carregando indicadores…' : 'Os níveis de risco aparecerão quando as análises estiverem disponíveis.' }}</p></div>
+      </article>
+    </ng-template>
   </section>
 
   <section

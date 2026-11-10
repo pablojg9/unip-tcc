@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from './auth.service';
+import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [CommonModule, FormsModule, RouterLink, RouterLinkActive, RouterOutlet],
   template: `
     <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
     <header class="app-header">
@@ -38,6 +41,13 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
           </a>
         </nav>
 
+        <div class="account-area">
+          <small>{{ auth.user ? auth.user.username : 'Modo de visualização' }}</small>
+          <button class="button secondary" type="button" *ngIf="!auth.user" (click)="loginOpen = true">Entrar</button>
+          <button class="button secondary" type="button" *ngIf="auth.user" (click)="auth.logout()" [disabled]="auth.loggingOut">{{ auth.loggingOut ? 'Saindo…' : 'Sair' }}</button>
+        </div>
+        <button type="button" class="theme-toggle button secondary" (click)="toggleTheme()" [attr.aria-pressed]="darkMode" aria-label="Alternar tema claro e escuro">{{ darkMode ? '☀ Tema claro' : '☾ Tema escuro' }}</button>
+
         <div class="workspace-status" aria-label="Estado do ambiente">
           <i aria-hidden="true"></i>
           <span><small>Ambiente produtivo</small><strong>Operacional</strong></span>
@@ -45,6 +55,16 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
       </div>
     </header>
 
+    <div class="login-backdrop" *ngIf="loginOpen">
+      <form class="panel login-panel" (ngSubmit)="login()" aria-label="Entrar na conta">
+        <h2>Entrar no FraudGuard</h2><p>Seu cargo determina as ações disponíveis.</p>
+        <label>Usuário<input name="username" [(ngModel)]="username" required autocomplete="username"></label>
+        <label>Senha<input name="password" [(ngModel)]="password" required type="password" autocomplete="current-password"></label>
+        <p class="alert error" *ngIf="loginError" role="alert">{{ loginError }}</p>
+        <button class="button" [disabled]="loggingIn || !username || !password">{{ loggingIn ? 'Entrando…' : 'Entrar' }}</button>
+        <button class="button ghost" type="button" (click)="loginOpen = false; password = ''">Cancelar</button>
+      </form>
+    </div>
     <div id="main-content" tabindex="-1"><router-outlet></router-outlet></div>
 
     <footer class="app-footer">
@@ -54,4 +74,39 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   `
 })
 export class RootComponent {
+  readonly auth = inject(AuthService);
+  get loginOpen(): boolean { return this.auth.loginOpen; }
+  set loginOpen(value: boolean) { this.auth.loginOpen = value; }
+  username = '';
+  password = '';
+  loginError = '';
+  loggingIn = false;
+  login(): void {
+    if (this.loggingIn) return;
+    this.loggingIn = true;
+    this.loginError = '';
+    this.auth.login(this.username, this.password).subscribe({
+      next: () => { this.password = ''; this.loggingIn = false; this.loginOpen = false; },
+      error: error => { this.password = ''; this.loggingIn = false; this.loginError = error.status === 401 ? 'Usuário ou senha inválidos.' : error.status === 403 ? 'Falha na validação de segurança. Atualize a página e tente novamente.' : 'Não foi possível entrar. Verifique a conexão com o servidor.'; }
+    });
+  }
+  darkMode = false;
+
+  constructor() {
+    try {
+      const saved = localStorage.getItem('fraudguard-theme');
+      this.darkMode = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+    } catch { /* Use the default theme when storage is unavailable. */ }
+    this.applyTheme();
+  }
+
+  toggleTheme(): void {
+    this.darkMode = !this.darkMode;
+    this.applyTheme();
+    try { localStorage.setItem('fraudguard-theme', this.darkMode ? 'dark' : 'light'); } catch { }
+  }
+
+  private applyTheme(): void {
+    document.documentElement.dataset['theme'] = this.darkMode ? 'dark' : 'light';
+  }
 }

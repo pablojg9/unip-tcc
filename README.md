@@ -4,6 +4,12 @@ Plataforma de análise de fraude automotiva com dashboard Angular, API Spring
 Boot, processamento assíncrono por Kafka e modelos de machine learning em
 Python.
 
+## Documentação
+
+A documentação técnica detalhada está em [docs/README.md](docs/README.md), com
+arquitetura, banco de dados, modelos e fórmulas, contrato da API e o fluxo
+completo do projeto.
+
 ## Executar o projeto
 
 Requisitos: Docker com Docker Compose.
@@ -12,8 +18,27 @@ Requisitos: Docker com Docker Compose.
 docker compose up --build
 ```
 
-Depois, acesse [http://localhost:4200](http://localhost:4200). O Compose inicia
-automaticamente o frontend, backend, PostgreSQL, Kafka e o serviço Python.
+No `docker-compose.yml` atual, esse comando inicia PostgreSQL, Kafka e AKHQ. Os blocos
+de frontend, backend, serviço Python e Ollama estão presentes, mas comentados;
+esses serviços precisam ser executados localmente ou reativados no Compose.
+Consulte a seção de estado do ambiente em
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#estado-real-do-ambiente-docker).
+
+### Consultar mensagens do Kafka com AKHQ
+
+Com o Compose em execução, abra [http://localhost:8081](http://localhost:8081)
+e entre com o usuário `viewer` e a senha `AKHQ_PASSWORD` do arquivo `.env`.
+Selecione o cluster `fraude-local` e entre em **Topics**. Abra um tópico e a aba
+**Data** para ver suas mensagens. Os principais tópicos são `transactions`,
+`fraud-results`, `model-training-requests`, `model-training-results`,
+`model-activation-requests` e `model-activation-results`. Os tópicos só aparecem
+depois de criados ou usados pelos serviços.
+
+O AKHQ usa `kafka:29092`, endereço interno da rede Docker; as aplicações
+executadas diretamente no computador continuam usando `localhost:9092`. A
+interface fica disponível somente neste computador. O usuário autenticado tem
+o perfil de leitura `reader`, que impede publicar mensagens ou alterar tópicos.
+As credenciais e o segredo de sessão ficam no `.env`, ignorado pelo Git.
 
 Para encerrar:
 

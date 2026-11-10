@@ -29,6 +29,8 @@ public interface SilverEntityMapper {
   @Mapping(target = "rowNumber", defaultValue = "0L")
   @Mapping(target = "sourceFile", source = "fileName")
   @Mapping(target = "confirmedFraud", source = "realFraud")
+  @Mapping(target = "predictedFraud", ignore = true)
+  @Mapping(target = "classification", ignore = true)
   @Mapping(target = "data", source = "features")
   ClaimRecord toClaimRecord(final SilverTransactionEntity entity);
 }

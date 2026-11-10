@@ -27,10 +27,10 @@ public class DatasetReaderFactory {
   }
 
   private DatasetRowCursor open(
-      DatasetReaderStrategy strategy,
-      Path file,
-      UUID importId,
-      String originalFileName) {
+      final DatasetReaderStrategy strategy,
+      final Path file,
+      final UUID importId,
+      final String originalFileName) {
     try {
       return strategy.open(file, importId, originalFileName);
     } catch (Exception exception) {

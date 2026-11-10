@@ -64,10 +64,10 @@ public class ImportJobLauncherAdapter implements ImportJobLauncherOutPort {
   @Override
   public void restart(final ImportJob importJob) {
     try {
-      final var previous = Optional.ofNullable(
+      final JobExecution previous = Optional.ofNullable(
           jobRepository.getJobExecution(importJob.batchExecutionId())
       ).orElseThrow(() -> new IllegalStateException("Batch execution not found"));
-      final var execution = jobOperator.restart(previous);
+      final JobExecution execution = jobOperator.restart(previous);
       repository.markBatchExecutionId(importJob.id(), execution.getId());
     } catch (Exception exception) {
       repository.markFinished(

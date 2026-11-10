@@ -42,7 +42,7 @@ public class TransactionOutboxPersistenceAdapter implements TransactionOutboxOut
   @Override
   public List<PendingTransactionEvent> findPending(final int limit) {
     return repository.findPendingForUpdate(
-        Math.min(Math.max(limit, 1), 500)
+        Math.clamp(limit, 1, 500)
     ).stream().map(mapper::toDomain).toList();
   }
 

@@ -18,7 +18,7 @@
   <div *ngIf="errorMessage" class="alert error" role="alert">{{ errorMessage }}</div>
 
   <section class="model-layout">
-    <article class="panel training-panel">
+    <article class="panel training-panel" *ngIf="auth.user?.canManageModels; else viewOnly">
       <div class="section-heading">
         <div><p class="eyebrow">Área administrativa</p><h2>Treinar nova versão</h2></div>
         <span class="protected"><i>◆</i> Acesso restrito</span>
@@ -35,17 +35,13 @@
         </span>
       </label>
 
-      <div class="admin-fields">
-        <label><span>Usuário administrador</span><input [(ngModel)]="adminUser" type="text" autocomplete="username" placeholder="Usuário"></label>
-        <label><span>Senha</span><input [(ngModel)]="adminPassword" type="password" autocomplete="current-password" placeholder="Senha administrativa"></label>
-      </div>
-
-      <button type="button" class="button train-button" (click)="train()" [disabled]="!selectedFile || !adminUser || !adminPassword || submitting">
+      <button type="button" class="button train-button" (click)="train()" [disabled]="!selectedFile || !auth.user?.canManageModels || submitting">
         {{ submitting ? 'Enviando solicitação…' : 'Iniciar treinamento' }}
       </button>
-      <small class="security-note">As credenciais são usadas somente nesta ação e não ficam armazenadas no navegador.</small>
+      <small class="security-note">Apenas administradores de modelos podem treinar e ativar versões.</small>
     </article>
 
+    <ng-template #viewOnly><article class="panel"><h2>Acesso de visualização</h2><p>Você pode consultar as versões e métricas abaixo. Treinamento e ativação exigem o cargo de administrador de modelos.</p></article></ng-template>
     <aside class="process-card">
       <p class="eyebrow">Fluxo seguro</p>
       <h2>Da base histórica à produção</h2>
@@ -61,13 +57,14 @@
   <section class="panel history-panel">
     <div class="section-heading">
       <div><p class="eyebrow">Auditoria</p><h2>Histórico de versões</h2></div>
-      <span class="auto-update"><i></i> Atualização automática</span>
+      <span class="auto-update">Status atualizado a cada 10 segundos</span>
+      <button type="button" class="button ghost" (click)="refreshModels()" [disabled]="loading">Atualizar lista</button>
     </div>
 
     <div *ngIf="loading" class="empty-state">Carregando modelos…</div>
     <div *ngIf="!loading && models.length === 0" class="empty-state">Nenhum treinamento solicitado ainda.</div>
 
-    <article *ngFor="let model of models" class="model-row" [class.active]="model.active">
+    <article *ngFor="let model of models; trackBy: trackModel" class="model-row" [class.active]="model.active">
       <div class="model-main">
         <div class="model-title">
           <span class="model-symbol">M</span>
@@ -84,14 +81,14 @@
       </div>
 
       <div class="metrics" *ngIf="metricEntries(model).length > 0">
-        <span *ngFor="let metric of metricEntries(model)"><small>{{ metricLabel(metric[0]) }}</small><strong>{{ metric[1] | percent:'1.1-1' }}</strong></span>
+        <span *ngFor="let metric of metricEntries(model); trackBy: trackMetric"><small>{{ metricLabel(metric[0]) }}</small><strong>{{ metric[1] | percent:'1.1-1' }}</strong></span>
       </div>
 
       <div *ngIf="model.errorMessage" class="model-error">{{ model.errorMessage }}</div>
 
-      <div class="model-actions" *ngIf="model.status === 'READY' || model.status === 'ACTIVATION_FAILED'">
+      <div class="model-actions" *ngIf="auth.user?.canManageModels && (model.status === 'READY' || model.status === 'ACTIVATION_FAILED')">
         <span>Revise as métricas antes de disponibilizar esta versão para novas análises.</span>
-        <button type="button" class="button" (click)="activate(model)" [disabled]="!adminUser || !adminPassword || !!activatingId">
+        <button type="button" class="button" (click)="activate(model)" [disabled]="!auth.user?.canManageModels || !!activatingId">
           {{ activatingId === model.trainingId ? 'Ativando…' : 'Ativar modelo' }}
         </button>
       </div>

@@ -4,7 +4,7 @@
 .filter-panel form { display: grid; grid-template-columns: 1.4fr 1.2fr 1fr 1fr auto; align-items: end; gap: 12px; }
 label > span { display: block; margin: 0 0 7px; color: var(--text-muted); font-size: 12px; font-weight: 700; }
 .actions { display: flex; gap: 7px; }
-.schema-hint { margin: 13px 0 0; color: #65d4b3; font-size: 12px; }
+.schema-hint { margin: 13px 0 0; color: #16785a; font-size: 12px; }
 .claims-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(320px, .8fr); gap: 14px; margin-top: 16px; align-items: start; }
 .list-heading, .detail-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
 .list-heading small { color: var(--text-soft); }
@@ -16,8 +16,8 @@ label > span { display: block; margin: 0 0 7px; color: var(--text-muted); font-s
 .row-main strong, .row-main small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row-main strong { color: var(--text); font-family: var(--font-mono); font-size: 12px; }
 .row-main small { margin-top: 5px; color: var(--text-soft); font-size: 11px; }
-.fraud-state { padding: 6px 8px; border-radius: 999px; color: #64d9b4; background: rgba(54, 211, 153, .09); font-size: 10px; font-weight: 800; }
-.fraud-state.fraud { color: #ff8c9b; background: rgba(251, 97, 118, .1); }
+.fraud-state { padding: 6px 8px; border-radius: 999px; color: #16785a; background: rgba(54, 211, 153, .09); font-size: 10px; font-weight: 800; }
+.fraud-state.fraud { color: #b82f49; background: rgba(251, 97, 118, .1); }
 .fraud-state.unknown { color: #9baac0; background: rgba(148, 163, 184, .08); }
 .pagination { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 16px; color: var(--text-soft); font-size: 12px; }
 .detail-panel { position: sticky; top: 96px; max-height: calc(100vh - 120px); overflow-y: auto; }
@@ -28,7 +28,7 @@ dt { color: var(--text-soft); font-size: 10px; font-weight: 800; letter-spacing:
 dd { margin: 5px 0 0; color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; overflow-wrap: anywhere; }
 .attribute-search { display: block; margin-bottom: 10px; }
 .attribute-list { display: grid; gap: 8px; }
-.attribute-list div { padding: 12px 13px; border: 1px solid var(--border); border-radius: 12px; background: rgba(5, 11, 19, .3); }
+.attribute-list div { padding: 12px 13px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-soft); }
 .attribute-list span, .attribute-list strong { display: block; overflow-wrap: anywhere; }
 .attribute-list span { color: var(--text-soft); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .attribute-list strong { margin-top: 5px; color: var(--text); font-size: 13px; }
@@ -43,3 +43,5 @@ dd { margin: 5px 0 0; color: var(--text-muted); font-family: var(--font-mono); f
 @media (max-width: 1100px) { .filter-panel form { grid-template-columns: repeat(2, 1fr); } .actions { align-self: end; } }
 @media (max-width: 850px) { .claims-layout { grid-template-columns: 1fr; } .detail-panel { position: static; max-height: none; } }
 @media (max-width: 600px) { .filter-panel form { grid-template-columns: 1fr; } .claim-row { grid-template-columns: auto minmax(0, 1fr); } .fraud-state { grid-column: 2; justify-self: start; } }
+
+.detail-hero, .upload-card, .process-card { background:var(--surface); }

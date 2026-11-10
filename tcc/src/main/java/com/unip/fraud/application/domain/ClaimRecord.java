@@ -10,6 +10,8 @@ public record ClaimRecord(
     long rowNumber,
     String sourceFile,
     Boolean confirmedFraud,
+    Boolean predictedFraud,
+    String classification,
     Map<String, Object> data,
     LocalDateTime processedAt
 ) {

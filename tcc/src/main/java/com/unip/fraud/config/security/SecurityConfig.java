@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
@@ -26,25 +25,44 @@ public class SecurityConfig {
   public UserDetailsService userDetailsService(
       @Value("${models.security.admin-user}") final String username,
       @Value("${models.security.admin-password}") final String password,
+      @Value("${models.security.viewer-user:}") final String viewerUsername,
+      @Value("${models.security.viewer-password:}") final String viewerPassword,
       final PasswordEncoder encoder) {
-    return new InMemoryUserDetailsManager(
+    final var users = new InMemoryUserDetailsManager(
         User.withUsername(username)
             .password(encoder.encode(password))
             .roles("MODEL_ADMIN")
             .build()
     );
+    if (!viewerUsername.isBlank() && !viewerPassword.isBlank()) {
+      if (viewerUsername.equals(username)) throw new IllegalArgumentException("Usernames must differ");
+      users.createUser(User.withUsername(viewerUsername).password(encoder.encode(viewerPassword)).roles("VIEWER").build());
+    }
+    return users;
   }
 
   @Bean
   public SecurityFilterChain securityFilterChain(final HttpSecurity http) throws Exception {
+    final var csrfRepository = org.springframework.security.web.csrf.CookieCsrfTokenRepository.withHttpOnlyFalse();
+    csrfRepository.setCookiePath("/");
     return http
-        .csrf(csrf -> csrf.disable())
-        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .csrf(csrf -> csrf
+            .csrfTokenRepository(csrfRepository)
+            .csrfTokenRequestHandler(new org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler()))
+        .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
         .authorizeHttpRequests(authorize -> authorize
+            .requestMatchers("/auth/me", "/auth/login").authenticated()
             .requestMatchers(HttpMethod.POST, "/models/**").hasRole("MODEL_ADMIN")
             .anyRequest().permitAll()
         )
-        .httpBasic(Customizer.withDefaults())
+        .logout(logout -> logout.logoutUrl("/auth/logout")
+            .logoutSuccessHandler((request, response, authentication) -> response.setStatus(204))
+            .deleteCookies("JSESSIONID"))
+        .httpBasic(basic -> basic.authenticationEntryPoint((request, response, exception) -> {
+          response.setStatus(401);
+          response.setContentType("application/json");
+          response.getWriter().write("{\"message\":\"Usuário ou senha inválidos.\"}");
+        }))
         .build();
   }
 }

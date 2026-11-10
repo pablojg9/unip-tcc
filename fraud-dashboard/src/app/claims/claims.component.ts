@@ -121,8 +121,20 @@ export class ClaimsComponent implements OnInit {
     }
   }
 
-  fraudLabel(value: boolean | null): string {
-    return value === null ? 'Sem rótulo' : value ? 'Fraude' : 'Legítimo';
+  predictionLabel(claim: Claim): string {
+    if (claim.predictedFraud !== null) {
+      return claim.predictedFraud ? 'Fraude' : 'Legítimo';
+    }
+    const anomalyRisk = claim.classification?.match(/^(High|Medium|Low) anomaly risk/i)?.[1]?.toLowerCase();
+    if (anomalyRisk) {
+      const risk = { high: 'alto', medium: 'médio', low: 'baixo' }[anomalyRisk];
+      return `Anomalia: risco ${risk}`;
+    }
+    return claim.classification ? 'Revisão necessária' : 'Aguardando análise';
+  }
+
+  confirmationLabel(value: boolean | null): string {
+    return value === null ? 'Não confirmado' : value ? 'Fraude' : 'Legítimo';
   }
 
   claimReference(claim: Claim): string {

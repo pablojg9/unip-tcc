@@ -4,6 +4,8 @@ export interface Claim {
   readonly rowNumber: number;
   readonly sourceFile: string;
   readonly confirmedFraud: boolean | null;
+  readonly predictedFraud: boolean | null;
+  readonly classification: string | null;
   readonly data: Readonly<Record<string, unknown>>;
   readonly processedAt: string;
 }

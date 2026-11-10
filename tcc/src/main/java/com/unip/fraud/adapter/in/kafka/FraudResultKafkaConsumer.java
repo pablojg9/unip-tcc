@@ -84,10 +84,10 @@ public class FraudResultKafkaConsumer {
       );
 
       goldRepositoryOutPort.save(result);
-
       log.info("Fraud result saved on Gold. transactionId={}", result.transactionId());
 
     } catch (Exception exception) {
+      log.error("Invalid fraud result message {}", exception.getMessage());
       throw new IllegalArgumentException("Invalid fraud result message", exception);
     }
   }

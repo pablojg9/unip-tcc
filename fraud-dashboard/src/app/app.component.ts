@@ -3,8 +3,9 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { EMPTY, catchError, finalize, forkJoin, interval, startWith, switchMap } from 'rxjs';
+import { EMPTY, catchError, finalize, forkJoin, of, switchMap } from 'rxjs';
 
+import { AuthService } from './auth.service';
 import { DashboardFilter } from './dashboard-filter.model';
 import { DashboardSummary } from './dashboard-summary.model';
 import { DashboardService } from './dashboard.service';
@@ -37,6 +38,10 @@ interface MetricCard {
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
+  private readonly auth = inject(AuthService);
+  private canAutoRefresh(): boolean {
+    return !this.auth.loginOpen && !document.hidden && !document.activeElement?.matches('input, select, textarea');
+  }
   private readonly dashboardService = inject(DashboardService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly formBuilder = inject(FormBuilder);
@@ -72,9 +77,8 @@ export class AppComponent implements OnInit {
   private decisionDetailRequest = 0;
 
   ngOnInit(): void {
-    interval(60_000)
+    of(0)
       .pipe(
-        startWith(0),
         switchMap(() => {
           this.loadingSummary = true;
           return forkJoin({
@@ -99,6 +103,10 @@ export class AppComponent implements OnInit {
 
     this.loadResults();
   }
+
+  trackMetric(_index: number, metric: MetricCard): string { return metric.layer; }
+  trackSlice(_index: number, slice: { label: string }): string { return slice.label; }
+  trackTrendDay(_index: number, day: { label: string }): string { return day.label; }
 
   get metrics(): readonly MetricCard[] {
     const data = this.summary;
@@ -149,6 +157,49 @@ export class AppComponent implements OnInit {
     const fraudEnd = this.decisionPercentage(this.predictedFraudCount);
     const legitimateEnd = fraudEnd + this.decisionPercentage(this.legitimateCount);
     return `conic-gradient(#f06d80 0% ${fraudEnd}%, #45d5a3 ${fraudEnd}% ${legitimateEnd}%, #718198 ${legitimateEnd}% 100%)`;
+  }
+
+  get predictionSlices() {
+    const categories = [
+      { label: 'Fraude prevista pela IA', value: this.predictedFraudCount, color: 'var(--danger)' },
+      { label: 'Legítimo previsto pela IA', value: this.legitimateCount, color: 'var(--success)' },
+      { label: 'Sem decisão da IA', value: this.pendingDecisionCount, color: '#718198' }
+    ];
+    let offset = 0;
+    return categories.filter(category => category.value > 0).map(category => {
+      const percentage = this.decisionPercentage(category.value);
+      const slice = { ...category, percentage, offset };
+      offset += percentage;
+      return slice;
+    });
+  }
+
+  get trendDays(): { label: string; fraud: number; legitimate: number }[] {
+    const buckets = new Map<string, { label: string; fraud: number; legitimate: number }>();
+    for (const result of this.results) {
+      const date = new Date(result.processedAt);
+      if (Number.isNaN(date.getTime())) continue;
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const bucket = buckets.get(key) ?? { label: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), fraud: 0, legitimate: 0 };
+      if (result.predictedFraud === true) bucket.fraud++;
+      if (result.predictedFraud === false) bucket.legitimate++;
+      buckets.set(key, bucket);
+    }
+    return [...buckets.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, value]) => value);
+  }
+
+  get trendMaximum(): number {
+    return Math.max(1, ...this.trendDays.flatMap(day => [day.fraud, day.legitimate]));
+  }
+
+  trendX(index: number): number {
+    return this.trendDays.length <= 1 ? 320 : 50 + index * 540 / (this.trendDays.length - 1);
+  }
+
+  trendY(value: number): number { return 230 - value / this.trendMaximum * 180; }
+
+  trendPath(series: 'fraud' | 'legitimate'): string {
+    return this.trendDays.map((day, index) => `${index === 0 ? 'M' : 'L'}${this.trendX(index)},${this.trendY(day[series])}`).join(' ');
   }
 
   get selectedDecisionLabel(): string {

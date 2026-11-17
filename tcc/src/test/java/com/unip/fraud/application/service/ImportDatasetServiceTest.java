@@ -35,7 +35,7 @@ class ImportDatasetServiceTest {
     storage = new FakeStorage();
     repository = new FakeRepository();
     launcher = new FakeLauncher();
-    service = new ImportDatasetService(storage, repository, launcher, () -> true, 1024);
+    service = new ImportDatasetService(storage, repository, launcher, () -> true, null, 1024);
   }
 
   @Test
@@ -63,7 +63,8 @@ class ImportDatasetServiceTest {
         LocalDateTime.now(),
         LocalDateTime.now(),
         LocalDateTime.now(),
-        10L
+        10L,
+        null
     );
     repository.duplicate = previous;
 
@@ -77,7 +78,7 @@ class ImportDatasetServiceTest {
 
   @Test
   void rejectsAnalysisWhenThereIsNoActiveModel() {
-    service = new ImportDatasetService(storage, repository, launcher, () -> false, 1024);
+    service = new ImportDatasetService(storage, repository, launcher, () -> false, null, 1024);
 
     assertThatThrownBy(() -> service.importDataset(command()))
         .isInstanceOf(IllegalArgumentException.class)

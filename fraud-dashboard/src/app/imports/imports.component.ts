@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { EMPTY, catchError, finalize, filter, merge, Subject, timer, exhaustMap, timeout } from 'rxjs';
 
 import { AuthService } from '../auth.service';
-import { ImportJob, ImportStatus, RejectedRecord } from './import.model';
+import { ImportJob, ImportScoringProgress, ImportStatus, RejectedRecord } from './import.model';
 import { ImportService } from './import.service';
 
 @Component({
@@ -24,13 +24,15 @@ export class ImportsComponent implements OnInit {
   imports: readonly ImportJob[] = [];
   selectedFile?: File;
   selectedImport?: ImportJob;
+  scoringProgress?: ImportScoringProgress;
   errors: readonly RejectedRecord[] = [];
   loading = true;
   uploading = false;
+  cancelling = false;
   loadError = false;
   uploadError = '';
   uploadSuccess = '';
-  private readonly auth = inject(AuthService);
+  readonly auth = inject(AuthService);
   private readonly refreshRequests = new Subject<void>();
 
   private readonly statusLabels: Readonly<Record<ImportStatus, string>> = {
@@ -60,6 +62,7 @@ export class ImportsComponent implements OnInit {
         this.loading = false;
         this.loadError = false;
         this.synchronizeSelection();
+        if (this.selectedImport) this.loadScoringProgress(this.selectedImport.importId);
       });
   }
 
@@ -92,6 +95,7 @@ export class ImportsComponent implements OnInit {
           this.uploadSuccess = 'Arquivo recebido. Acompanhe o processamento na lista abaixo.';
           this.imports = [job, ...this.imports.filter(item => item.importId !== job.importId)];
           this.selectedImport = job;
+          this.loadScoringProgress(job.importId);
           this.selectedFile = undefined;
           if (this.fileInput) {
             this.fileInput.nativeElement.value = '';
@@ -103,6 +107,8 @@ export class ImportsComponent implements OnInit {
 
   selectImport(job: ImportJob): void {
     this.selectedImport = job;
+    this.scoringProgress = undefined;
+    this.loadScoringProgress(job.importId);
     this.errors = [];
     if (job.rejectedRows > 0) {
       this.importService.errors(job.importId, 0, 20)
@@ -121,8 +127,27 @@ export class ImportsComponent implements OnInit {
         next: updated => {
           this.imports = this.imports.map(item => item.importId === updated.importId ? updated : item);
           this.selectedImport = updated;
+          this.loadScoringProgress(updated.importId);
         },
         error: error => this.uploadError = error?.error?.message ?? 'Não foi possível reiniciar esta importação.'
+      });
+  }
+
+  cancelScoring(job: ImportJob): void {
+    if (this.cancelling || job.scoringCancelledAt) return;
+    this.cancelling = true;
+    this.uploadError = '';
+    this.importService.cancelScoring(job.importId)
+      .pipe(finalize(() => this.cancelling = false), takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: updated => {
+          this.imports = this.imports.map(item => item.importId === updated.importId ? updated : item);
+          this.selectedImport = updated;
+          this.uploadSuccess = 'Pontuação cancelada para as transações pendentes desta importação.';
+        },
+        error: error => this.uploadError = error?.status === 403
+          ? 'Entre como administrador para cancelar a pontuação.'
+          : error?.error?.message ?? 'Não foi possível cancelar a pontuação.'
       });
   }
 
@@ -163,5 +188,18 @@ export class ImportsComponent implements OnInit {
     if (selectedId) {
       this.selectedImport = this.imports.find(item => item.importId === selectedId);
     }
+  }
+
+  private loadScoringProgress(importId: string): void {
+    this.importService.scoringProgress(importId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: progress => {
+          if (this.selectedImport?.importId === importId) this.scoringProgress = progress;
+        },
+        error: () => {
+          if (this.selectedImport?.importId === importId) this.scoringProgress = undefined;
+        }
+      });
   }
 }

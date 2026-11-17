@@ -53,6 +53,7 @@ public class SecurityConfig {
         .authorizeHttpRequests(authorize -> authorize
             .requestMatchers("/auth/me", "/auth/login").authenticated()
             .requestMatchers(HttpMethod.POST, "/models/**").hasRole("MODEL_ADMIN")
+            .requestMatchers(HttpMethod.POST, "/imports/*/cancel-scoring").hasRole("MODEL_ADMIN")
             .anyRequest().permitAll()
         )
         .logout(logout -> logout.logoutUrl("/auth/logout")

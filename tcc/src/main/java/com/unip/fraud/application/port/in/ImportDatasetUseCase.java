@@ -8,4 +8,5 @@ import java.util.UUID;
 public interface ImportDatasetUseCase {
   ImportJobView importDataset(ImportFileCommand command);
   ImportJobView retry(UUID importId);
+  ImportJobView cancelScoring(UUID importId);
 }

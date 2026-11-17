@@ -6,7 +6,7 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
-from kafka import KafkaConsumer, KafkaProducer
+from kafka import KafkaConsumer, KafkaProducer, TopicPartition
 from kafka.errors import NoBrokersAvailable
 
 from fraud_detection.application.scoring import FraudScoringService
@@ -31,10 +31,22 @@ class KafkaScoringWorker:
     self._scoring_service = scoring_service
 
   def run_forever(self) -> None:
+    while True:
+      try:
+        cancellations = ScoringCancellationRegistry(
+          self._settings.kafka_bootstrap_servers,
+          self._settings.cancellations_topic,
+        )
+        break
+      except NoBrokersAvailable:
+        logger.warning("Kafka is unavailable; retrying in %.1f seconds",
+                       self._settings.kafka_retry_seconds)
+        time.sleep(self._settings.kafka_retry_seconds)
     consumer = self._connect_consumer()
     producer = self._connect_producer()
     logger.info("Fraud scoring worker listening to %s", self._settings.input_topic)
     for raw_message in consumer:
+      cancellations.refresh()
       message = IncomingMessage(
         key=raw_message.key,
         value=raw_message.value,
@@ -42,7 +54,13 @@ class KafkaScoringWorker:
         partition=raw_message.partition,
         offset=raw_message.offset,
       )
+      transaction_id = message.value.get("transactionId") if isinstance(message.value, dict) else None
+      if cancellations.contains(transaction_id):
+        consumer.commit()
+        logger.debug("Skipped cancelled transaction %s", transaction_id)
+        continue
       self._process_with_retry(message, consumer, producer)
+
 
   def _process_with_retry(self, message: IncomingMessage, consumer, producer) -> None:
     for attempt in range(1, self._settings.message_max_retries + 1):
@@ -138,3 +156,46 @@ class KafkaScoringWorker:
           self._settings.kafka_retry_seconds,
         )
         time.sleep(self._settings.kafka_retry_seconds)
+
+
+class ScoringCancellationRegistry:
+  """Keeps the durable cancellation topic in memory before consuming claims."""
+
+  def __init__(self, bootstrap_servers: str, topic: str) -> None:
+    self._consumer = KafkaConsumer(
+      bootstrap_servers=bootstrap_servers,
+      enable_auto_commit=False,
+      group_id=None,
+      value_deserializer=lambda value: json.loads(value.decode("utf-8")),
+    )
+    self._partition = TopicPartition(topic, 0)
+    self._consumer.assign([self._partition])
+    self._consumer.seek_to_beginning(self._partition)
+    self._cancelled: set[str] = set()
+    self._next_refresh = 0.0
+    end = self._consumer.end_offsets([self._partition])[self._partition]
+    while self._consumer.position(self._partition) < end:
+      self._drain(1000)
+    logger.info("Loaded %s cancelled transaction IDs", len(self._cancelled))
+
+  def contains(self, transaction_id: object) -> bool:
+    return isinstance(transaction_id, str) and transaction_id in self._cancelled
+
+  def refresh(self) -> None:
+    now = time.monotonic()
+    if now < self._next_refresh:
+      return
+    self._next_refresh = now + 1.0
+    self._drain(100)
+
+  def _drain(self, timeout_ms: int) -> None:
+    while True:
+      batches = self._consumer.poll(timeout_ms=timeout_ms, max_records=1000)
+      if not batches:
+        return
+      for records in batches.values():
+        for record in records:
+          ids = record.value.get("transactionIds", [])
+          if isinstance(ids, list):
+            self._cancelled.update(value for value in ids if isinstance(value, str))
+      timeout_ms = 0

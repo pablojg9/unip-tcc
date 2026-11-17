@@ -2,9 +2,11 @@ package com.unip.fraud.adapter.in;
 
 import com.unip.fraud.application.domain.ImportFileCommand;
 import com.unip.fraud.application.domain.ImportJobView;
+import com.unip.fraud.application.domain.ImportScoringProgress;
 import com.unip.fraud.application.domain.PageResponse;
 import com.unip.fraud.application.port.in.GetImportsUseCase;
 import com.unip.fraud.application.port.in.ImportDatasetUseCase;
+import com.unip.fraud.application.service.ImportScoringProgressService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,12 +24,15 @@ public class ImportController {
 
   private final ImportDatasetUseCase importDatasetUseCase;
   private final GetImportsUseCase getImportsUseCase;
+  private final ImportScoringProgressService scoringProgress;
 
   public ImportController(
       final ImportDatasetUseCase importDatasetUseCase,
-      final GetImportsUseCase getImportsUseCase) {
+      final GetImportsUseCase getImportsUseCase,
+      final ImportScoringProgressService scoringProgress) {
     this.importDatasetUseCase = importDatasetUseCase;
     this.getImportsUseCase = getImportsUseCase;
+    this.scoringProgress = scoringProgress;
   }
 
   @PostMapping
@@ -53,8 +58,18 @@ public class ImportController {
     return getImportsUseCase.getImport(importId);
   }
 
+  @GetMapping("/{importId}/scoring-progress")
+  public ImportScoringProgress scoringProgress(@PathVariable final UUID importId) {
+    return scoringProgress.get(importId);
+  }
+
   @PostMapping("/{importId}/retry")
   public ResponseEntity<ImportJobView> retry(@PathVariable final UUID importId) {
     return ResponseEntity.accepted().body(importDatasetUseCase.retry(importId));
+  }
+
+  @PostMapping("/{importId}/cancel-scoring")
+  public ImportJobView cancelScoring(@PathVariable final UUID importId) {
+    return importDatasetUseCase.cancelScoring(importId);
   }
 }

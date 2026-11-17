@@ -22,6 +22,7 @@ class Settings:
   kafka_bootstrap_servers: str
   input_topic: str
   output_topic: str
+  cancellations_topic: str
   consumer_group: str
   target_aliases: tuple[str, ...]
   random_state: int
@@ -58,6 +59,7 @@ class Settings:
       kafka_bootstrap_servers=os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
       input_topic=os.getenv("KAFKA_TRANSACTIONS_TOPIC", "transactions"),
       output_topic=os.getenv("KAFKA_RESULTS_TOPIC", "fraud-results"),
+      cancellations_topic=os.getenv("KAFKA_SCORING_CANCELLATIONS_TOPIC", "scoring-cancellations"),
       consumer_group=os.getenv("KAFKA_CONSUMER_GROUP", "ml-fraud-consumer"),
       target_aliases=aliases,
       random_state=_integer("FRAUD_RANDOM_STATE", 42),

@@ -111,6 +111,7 @@ python consult-column.py --dataset ../fraud_scenario_1.csv
 | `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` |
 | `KAFKA_TRANSACTIONS_TOPIC` | `transactions` |
 | `KAFKA_RESULTS_TOPIC` | `fraud-results` |
+| `KAFKA_SCORING_CANCELLATIONS_TOPIC` | `scoring-cancellations` |
 | `KAFKA_CONSUMER_GROUP` | `ml-fraud-consumer` |
 | `KAFKA_MESSAGE_MAX_RETRIES` | `3` |
 | `KAFKA_TRAINING_REQUESTS_TOPIC` | `model-training-requests` |

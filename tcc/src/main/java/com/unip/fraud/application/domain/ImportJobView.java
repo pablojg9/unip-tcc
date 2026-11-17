@@ -14,6 +14,7 @@ public record ImportJobView(
     LocalDateTime createdAt,
     LocalDateTime startedAt,
     LocalDateTime finishedAt,
-    Long batchExecutionId
+    Long batchExecutionId,
+    LocalDateTime scoringCancelledAt
 ) {
 }

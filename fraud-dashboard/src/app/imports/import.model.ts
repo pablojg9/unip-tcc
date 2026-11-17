@@ -17,6 +17,12 @@ export interface ImportJob {
   readonly startedAt: string | null;
   readonly finishedAt: string | null;
   readonly batchExecutionId: number | null;
+  readonly scoringCancelledAt: string | null;
+}
+
+export interface ImportScoringProgress {
+  readonly scoredRows: number;
+  readonly withoutScoreRows: number;
 }
 
 export interface RejectedRecord {

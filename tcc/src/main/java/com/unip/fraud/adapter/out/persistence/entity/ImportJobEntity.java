@@ -43,6 +43,7 @@ public class ImportJobEntity {
   private LocalDateTime startedAt;
   private LocalDateTime finishedAt;
   private Long batchExecutionId;
+  private LocalDateTime scoringCancelledAt;
 
   public void markProcessing(final LocalDateTime startedAt) {
     this.status = "PROCESSING";

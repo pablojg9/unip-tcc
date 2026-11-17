@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { PagedResponse } from '../../page/paged-response.model';
-import { ImportJob, RejectedRecord } from './import.model';
+import { ImportJob, ImportScoringProgress, RejectedRecord } from './import.model';
 
 const API_ROOT = '/process_fraud_automotive/imports';
 
@@ -24,6 +24,16 @@ export class ImportService {
 
   retry(importId: string): Observable<ImportJob> {
     return this.http.post<ImportJob>(`${API_ROOT}/${encodeURIComponent(importId)}/retry`, null);
+  }
+
+  cancelScoring(importId: string): Observable<ImportJob> {
+    return this.http.post<ImportJob>(`${API_ROOT}/${encodeURIComponent(importId)}/cancel-scoring`, null);
+  }
+
+  scoringProgress(importId: string): Observable<ImportScoringProgress> {
+    return this.http.get<ImportScoringProgress>(
+      `${API_ROOT}/${encodeURIComponent(importId)}/scoring-progress`
+    );
   }
 
   errors(importId: string, page = 0, size = 20): Observable<PagedResponse<RejectedRecord>> {

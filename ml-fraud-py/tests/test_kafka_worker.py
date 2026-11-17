@@ -1,12 +1,64 @@
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from fraud_detection.config import DEFAULT_TARGET_ALIASES, Settings
 from fraud_detection.domain import ScoringResult
-from fraud_detection.infrastructure.kafka import IncomingMessage, KafkaScoringWorker
+from fraud_detection.infrastructure.kafka import (
+  IncomingMessage, KafkaScoringWorker, ScoringCancellationRegistry,
+)
 
 
 class KafkaScoringWorkerTest(unittest.TestCase):
+  def test_loads_existing_cancellations_before_scoring_starts(self) -> None:
+    class ControlConsumer:
+      def __init__(self):
+        self.offset = 0
+
+      def assign(self, partitions):
+        self.partition = partitions[0]
+
+      def seek_to_beginning(self, partition):
+        self.offset = 0
+
+      def end_offsets(self, partitions):
+        return {self.partition: 1}
+
+      def position(self, partition):
+        return self.offset
+
+      def poll(self, **kwargs):
+        if self.offset:
+          return {}
+        self.offset = 1
+        return {self.partition: [type("Record", (), {
+          "value": {"transactionIds": ["claim-1"]},
+        })()]}
+
+    with patch("fraud_detection.infrastructure.kafka.KafkaConsumer", return_value=ControlConsumer()):
+      registry = ScoringCancellationRegistry("localhost:9092", "scoring-cancellations")
+
+    self.assertTrue(registry.contains("claim-1"))
+    self.assertFalse(registry.contains("claim-2"))
+
+  def test_skips_cancelled_transaction_without_scoring_or_publishing(self) -> None:
+    scorer = FlakyScorer(failures=0)
+    worker = KafkaScoringWorker(settings(max_retries=1), scorer)
+    consumer = FiniteConsumer([type("Record", (), {
+      "key": b"claim-1", "value": message().value,
+      "topic": "transactions", "partition": 0, "offset": 1,
+    })()])
+    producer = FakeProducer()
+    worker._connect_consumer = lambda: consumer
+    worker._connect_producer = lambda: producer
+    with patch("fraud_detection.infrastructure.kafka.ScoringCancellationRegistry") as registry:
+      registry.return_value.contains.return_value = True
+      worker.run_forever()
+
+    self.assertEqual(0, scorer.calls)
+    self.assertEqual(1, consumer.commits)
+    self.assertEqual([], producer.sent)
+
   def test_retries_the_same_record_before_committing(self) -> None:
     scorer = FlakyScorer(failures=2)
     worker = KafkaScoringWorker(settings(max_retries=3), scorer)
@@ -66,6 +118,15 @@ class FakeConsumer:
     self.commits += 1
 
 
+class FiniteConsumer(FakeConsumer):
+  def __init__(self, messages) -> None:
+    super().__init__()
+    self.messages = messages
+
+  def __iter__(self):
+    return iter(self.messages)
+
+
 class FakeFuture:
   def get(self, timeout: int) -> None:
     return None
@@ -86,6 +147,7 @@ def settings(max_retries: int) -> Settings:
     kafka_bootstrap_servers="localhost:9092",
     input_topic="transactions",
     output_topic="fraud-results",
+    cancellations_topic="scoring-cancellations",
     consumer_group="test",
     target_aliases=DEFAULT_TARGET_ALIASES,
     random_state=42,

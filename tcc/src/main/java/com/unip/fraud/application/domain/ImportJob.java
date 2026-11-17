@@ -16,7 +16,8 @@ public record ImportJob(
     LocalDateTime createdAt,
     LocalDateTime startedAt,
     LocalDateTime finishedAt,
-    Long batchExecutionId
+    Long batchExecutionId,
+    LocalDateTime scoringCancelledAt
 ) {
   public static ImportJob queued(final UUID id, final StoredImportFile file) {
     return new ImportJob(
@@ -30,6 +31,7 @@ public record ImportJob(
         0,
         null,
         LocalDateTime.now(),
+        null,
         null,
         null,
         null
@@ -48,7 +50,8 @@ public record ImportJob(
         createdAt,
         startedAt,
         finishedAt,
-        batchExecutionId
+        batchExecutionId,
+        scoringCancelledAt
     );
   }
 }

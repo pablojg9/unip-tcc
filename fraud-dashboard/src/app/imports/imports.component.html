@@ -71,7 +71,9 @@
 
       <div class="numbers">
         <div><strong>{{ job.totalRows }}</strong><span>Total</span></div>
-        <div><strong>{{ job.processedRows }}</strong><span>Processadas</span></div>
+        <div><strong>{{ job.processedRows }}</strong><span>Importadas</span></div>
+        <div><strong>{{ scoringProgress?.scoredRows ?? '—' }}</strong><span>Pontuadas pela IA</span></div>
+        <div><strong>{{ scoringProgress?.withoutScoreRows ?? '—' }}</strong><span>Sem score</span></div>
         <div><strong>{{ job.rejectedRows }}</strong><span>Rejeitadas</span></div>
       </div>
 
@@ -82,10 +84,12 @@
       </dl>
 
       <div *ngIf="job.errorMessage" class="alert error">{{ job.errorMessage }}</div>
+      <div *ngIf="job.scoringCancelledAt" class="alert">Pontuação cancelada em {{ job.scoringCancelledAt | date:'dd/MM/yyyy HH:mm:ss' }}. Resultados já calculados foram mantidos.</div>
 
       <div class="detail-actions">
         <a class="button" [routerLink]="['/claims']" [queryParams]="{ importId: job.importId }">Explorar dados</a>
         <button *ngIf="job.status === 'FAILED'" type="button" class="button danger" (click)="retry(job)">Tentar novamente</button>
+        <button *ngIf="auth.user?.canManageModels && (job.status === 'COMPLETED' || job.status === 'COMPLETED_WITH_WARNINGS') && !job.scoringCancelledAt" type="button" class="button danger" (click)="cancelScoring(job)" [disabled]="cancelling">{{ cancelling ? 'Cancelando…' : 'Parar pontuação pendente' }}</button>
       </div>
 
       <section *ngIf="errors.length > 0" class="rejections">

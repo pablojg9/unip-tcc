@@ -50,6 +50,11 @@ docker compose down
 
 - **Analisar:** recebe arquivos operacionais e calcula o risco usando o modelo
   ativo. Esse fluxo nunca retreina o modelo.
+- Em uma importação concluída, **Parar pontuação pendente** interrompe somente
+  os scores ainda não calculados daquele arquivo. Os resultados existentes são
+  mantidos e o serviço Python continua atendendo outras importações. O aviso de
+  cancelamento fica no tópico Kafka `scoring-cancellations`, inclusive para
+  mensagens do arquivo que já tinham sido publicadas.
 - **Modelos:** recebe um dataset histórico, treina uma versão candidata e exibe
   suas métricas. Apenas depois de uma ativação administrativa ela passa a ser
   usada nas análises. Bases rotuladas geram um modelo supervisionado; bases sem

@@ -52,6 +52,7 @@ def _settings() -> Settings:
     kafka_bootstrap_servers="localhost:9092",
     input_topic="transactions",
     output_topic="fraud-results",
+    cancellations_topic="scoring-cancellations",
     consumer_group="test",
     target_aliases=DEFAULT_TARGET_ALIASES,
     random_state=42,

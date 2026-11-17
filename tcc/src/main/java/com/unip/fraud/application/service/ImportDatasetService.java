@@ -37,6 +37,7 @@ public class ImportDatasetService implements ImportDatasetUseCase, GetImportsUse
   private final ImportJobRepositoryOutPort repository;
   private final ImportJobLauncherOutPort launcher;
   private final ActiveModelRepositoryOutPort activeModels;
+  private final ScoringCancellationService cancellations;
   private final long maxFileSize;
 
   public ImportDatasetService(
@@ -44,11 +45,13 @@ public class ImportDatasetService implements ImportDatasetUseCase, GetImportsUse
       final ImportJobRepositoryOutPort repository,
       final ImportJobLauncherOutPort launcher,
       final ActiveModelRepositoryOutPort activeModels,
+      final ScoringCancellationService cancellations,
       @Value("${imports.max-file-size}") final long maxFileSize) {
     this.storage = storage;
     this.repository = repository;
     this.launcher = launcher;
     this.activeModels = activeModels;
+    this.cancellations = cancellations;
     this.maxFileSize = maxFileSize;
   }
 
@@ -66,6 +69,7 @@ public class ImportDatasetService implements ImportDatasetUseCase, GetImportsUse
         DEDUPLICATED_STATUSES
     );
     return duplicate
+        .filter(importJob -> importJob.scoringCancelledAt() == null)
         .map(importJob -> duplicatedImport(storedFile, importJob))
         .orElseGet(() -> startImport(importId, storedFile));
   }
@@ -105,6 +109,11 @@ public class ImportDatasetService implements ImportDatasetUseCase, GetImportsUse
     repository.markQueued(importId);
     launcher.restart(importJob);
     return repository.findById(importId).orElse(importJob).toView();
+  }
+
+  @Override
+  public ImportJobView cancelScoring(final UUID importId) {
+    return cancellations.cancel(importId);
   }
 
   @Override

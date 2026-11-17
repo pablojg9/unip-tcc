@@ -40,7 +40,7 @@
 .status.large { display: inline-flex; margin-top: 12px; }
 .detail-panel { position: sticky; top: 96px; }
 .detail-panel > h2 { overflow-wrap: anywhere; }
-.numbers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 20px 0; }
+.numbers { display: grid; grid-template-columns: repeat(auto-fit, minmax(95px, 1fr)); gap: 8px; margin: 20px 0; }
 .numbers div { padding: 13px 8px; border: 1px solid var(--border); border-radius: 12px; text-align: center; }
 .numbers strong, .numbers span { display: block; }
 .numbers strong { color: var(--text); font-size: 20px; }
@@ -49,7 +49,7 @@ dl { margin: 0; }
 dl div { padding: 11px 0; border-top: 1px solid var(--border); }
 dt { color: var(--text-soft); font-size: 10px; font-weight: 800; text-transform: uppercase; }
 dd { margin: 5px 0 0; color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; overflow-wrap: anywhere; }
-.detail-actions { display: flex; gap: 8px; margin-top: 16px; }
+.detail-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
 .detail-actions a { display: grid; place-items: center; text-decoration: none; }
 .rejections { margin-top: 20px; padding-top: 17px; border-top: 1px solid var(--border); }
 .rejections h3 { margin: 0 0 10px; font-size: 14px; }

@@ -11,6 +11,7 @@ public class KafkaTopicConfig {
 
   private final String transactionsTopic;
   private final String resultsTopic;
+  private final String cancellationsTopic;
   private final String trainingRequestsTopic;
   private final String trainingResultsTopic;
   private final String activationRequestsTopic;
@@ -19,12 +20,14 @@ public class KafkaTopicConfig {
   public KafkaTopicConfig(
       @Value("${fraud.kafka.transactions-topic}") final String transactionsTopic,
       @Value("${fraud.kafka.results-topic}") final String resultsTopic,
+      @Value("${fraud.kafka.scoring-cancellations-topic}") final String cancellationsTopic,
       @Value("${fraud.kafka.training-requests-topic}") final String trainingRequestsTopic,
       @Value("${fraud.kafka.training-results-topic}") final String trainingResultsTopic,
       @Value("${fraud.kafka.activation-requests-topic}") final String activationRequestsTopic,
       @Value("${fraud.kafka.activation-results-topic}") final String activationResultsTopic) {
     this.transactionsTopic = transactionsTopic;
     this.resultsTopic = resultsTopic;
+    this.cancellationsTopic = cancellationsTopic;
     this.trainingRequestsTopic = trainingRequestsTopic;
     this.trainingResultsTopic = trainingResultsTopic;
     this.activationRequestsTopic = activationRequestsTopic;
@@ -53,6 +56,12 @@ public class KafkaTopicConfig {
         .partitions(3)
         .replicas(1)
         .build();
+  }
+
+  @Bean
+  public NewTopic scoringCancellationsTopic() {
+    return TopicBuilder.name(cancellationsTopic).partitions(1).replicas(1)
+        .config("cleanup.policy", "compact").build();
   }
 
   @Bean

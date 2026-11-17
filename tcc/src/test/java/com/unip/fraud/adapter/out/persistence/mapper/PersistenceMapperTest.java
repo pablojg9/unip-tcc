@@ -93,6 +93,7 @@ class PersistenceMapperTest {
         LocalDateTime.now(),
         null,
         null,
+        null,
         null
     );
 
